@@ -10,7 +10,7 @@ export interface SectionScrollPosition {
   posInSection: number;
 }
 
-const DEFAULT_ANCHOR_RATIO = 0.35;
+const DEFAULT_ANCHOR_RATIO = 0;
 
 export function measureSections(elements: HTMLElement[]): MeasuredSection[] {
   return elements.map((element, index) => {

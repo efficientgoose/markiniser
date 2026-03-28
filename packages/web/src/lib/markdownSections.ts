@@ -23,6 +23,7 @@ const startSectionBlockTypeMap = new Set([
   "html_block",
   "bullet_list_open",
   "ordered_list_open",
+  "list_item_open",
   "hr",
   "dl_open"
 ]);
@@ -45,11 +46,27 @@ export function parseMarkdownSections(text: string): MarkdownSection[] {
       startSectionBlockTypeMap.has(token.type) &&
       index > 0
     ) {
-      boundaries.push(token.map[0]);
+      const nextBoundary = token.map[0];
+      if (boundaries.at(-1) !== nextBoundary) {
+        boundaries.push(nextBoundary);
+      }
+    }
+
+    if (
+      token.type === "list_item_open" &&
+      token.map &&
+      index > 0
+    ) {
+      const nextBoundary = token.map[0];
+      if (boundaries.at(-1) !== nextBoundary) {
+        boundaries.push(nextBoundary);
+      }
     }
   }
 
-  boundaries.push(lines.length);
+  if (boundaries.at(-1) !== lines.length) {
+    boundaries.push(lines.length);
+  }
 
   const sections: MarkdownSection[] = [];
   for (let index = 0; index < boundaries.length - 1; index += 1) {

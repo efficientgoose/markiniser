@@ -18,6 +18,7 @@ import {
 export interface PreviewProps {
   content: string;
   onScrollPositionChange?(position: SectionScrollPosition): void;
+  isFullscreen?: boolean;
 }
 
 export interface PreviewHandle {
@@ -25,7 +26,7 @@ export interface PreviewHandle {
 }
 
 function PreviewInner(
-  { content, onScrollPositionChange }: PreviewProps,
+  { content, onScrollPositionChange, isFullscreen = false }: PreviewProps,
   ref: ForwardedRef<PreviewHandle>
 ) {
   const surfaceRef = useRef<HTMLDivElement | null>(null);
@@ -133,14 +134,16 @@ function PreviewInner(
     <div
       data-testid="preview-surface"
       ref={surfaceRef}
-      className="preview-pane hide-scrollbar h-full overflow-auto bg-[color:var(--ctp-base)] p-2"
+      className={`preview-pane hide-scrollbar h-full overflow-auto bg-[color:var(--ctp-base)] ${
+        isFullscreen ? "px-2 pb-2 pt-0" : "p-2"
+      }`}
       onScroll={emitViewportLine}
     >
       <article
         data-testid="preview-document"
         className="preview-document h-full rounded-[14px] bg-[color:var(--ctp-base)]"
       >
-        <div className="markdown-preview px-3 py-3">
+        <div className={`markdown-preview ${isFullscreen ? "px-3 pb-3 pt-0" : "px-3 py-3"}`}>
           {sections.map((section) => (
             <div
               key={section.index}

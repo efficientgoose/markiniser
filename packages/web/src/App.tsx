@@ -81,6 +81,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
   const previewRef = useRef<PreviewHandle | null>(null);
   const syncLockRef = useRef<"editor" | "preview" | null>(null);
   const syncReleaseFrameRef = useRef<number | null>(null);
+  const didOpenDefaultSampleRef = useRef(false);
   const isSplitView = isPreviewOpen && !isPreviewMaximized;
   const isEditorOnly = !isPreviewOpen && !isPreviewMaximized;
   const isPreviewOnly = isPreviewMaximized;
@@ -93,7 +94,17 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
   });
 
   useEffect(() => {
-    void store.getState().loadTree();
+    void (async () => {
+      await store.getState().loadTree();
+      if (didOpenDefaultSampleRef.current) {
+        return;
+      }
+
+      didOpenDefaultSampleRef.current = true;
+      if (!store.getState().currentFile) {
+        store.getState().openSampleFile();
+      }
+    })();
   }, [store]);
 
   const handleEditorChange = useEffectEvent((nextContent: string) => {
@@ -332,6 +343,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
       const response = await renameFile(currentFile.path, nextName);
       store.getState().applyFileRename(response);
       setIsRenameMode(false);
+      onShowToast("File renamed");
     } catch (error) {
       setRenameError(error instanceof Error ? error.message : "Unable to rename file.");
     } finally {

@@ -175,7 +175,7 @@ describe("createAppStore", () => {
     store.getState().openSampleFile();
 
     expect(store.getState().currentFile?.path).toBe("markiniser://sample/welcome.md");
-    expect(store.getState().currentFile?.name).toBe("Markiniser Sample.md");
+    expect(store.getState().currentFile?.name).toBe("welcome.md");
     expect(store.getState().currentFile?.isVirtual).toBe(true);
     expect(store.getState().recentFiles).toEqual(["/docs/guide.md"]);
     expect(store.getState().saveStatus).toBe("saved");

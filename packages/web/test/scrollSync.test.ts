@@ -29,6 +29,18 @@ describe("scrollSync helpers", () => {
     expect(getSectionScrollPosition(200, sections)).toEqual({ sectionIdx: 1, posInSection: 0.5 });
   });
 
+  it("uses the top visible edge as the sync anchor", () => {
+    const sections = [
+      { index: 0, startOffset: 0, height: 140, endOffset: 140 },
+      { index: 1, startOffset: 140, height: 260, endOffset: 400 }
+    ];
+
+    expect(getSectionScrollPosition(0, sections, 300, 100)).toEqual({
+      sectionIdx: 0,
+      posInSection: 0
+    });
+  });
+
   it("treats the maximum scroll position as the end of the last section", () => {
     const sections = [
       { index: 0, startOffset: 0, height: 100, endOffset: 100 },
@@ -59,7 +71,7 @@ describe("scrollSync helpers", () => {
 
     const position = getSectionScrollPosition(120, sections, 300, 100);
 
-    expect(position).toEqual({ sectionIdx: 1, posInSection: 15 / 260 });
+    expect(position).toEqual({ sectionIdx: 0, posInSection: 120 / 140 });
     expect(
       getScrollTopForSectionPosition(position!, sections, 300, 100)
     ).toBeCloseTo(120, 6);

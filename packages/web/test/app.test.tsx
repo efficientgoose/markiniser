@@ -193,16 +193,15 @@ afterEach(() => {
 });
 
 describe("App", () => {
-  it("loads the tree and shows the empty state before file selection", async () => {
+  it("loads the tree and opens the sample file by default", async () => {
     render(<App />);
 
     expect(await screen.findByTestId("app-shell")).toHaveClass("theme-mocha");
     expect(await screen.findByRole("button", { name: "Open search palette" })).toBeInTheDocument();
-    expect(
-      await screen.findByText("Select a file from the sidebar or search to start editing")
-    ).toBeInTheDocument();
     expect(await screen.findByText("guide.md")).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: "Load sample file" })).toBeInTheDocument();
+    expect(await screen.findByLabelText("Markdown editor")).toBeInTheDocument();
+    expect(await screen.findByText("welcome.md")).toBeInTheDocument();
+    expect(await screen.findByText("Sample file · local only")).toBeInTheDocument();
   });
 
   it("opens a file and renders raw content in the main panel", async () => {
@@ -484,14 +483,11 @@ describe("App", () => {
     expect(await screen.findByText("File saved")).toBeInTheDocument();
   });
 
-  it("opens an in-memory sample file from the empty state", async () => {
-    const user = userEvent.setup();
+  it("keeps the sample file local-only when shown by default", async () => {
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "Load sample file" }));
-
     expect(await screen.findByLabelText("Markdown editor")).toBeInTheDocument();
-    expect(await screen.findByText("Markiniser Sample.md")).toBeInTheDocument();
+    expect(await screen.findByText("welcome.md")).toBeInTheDocument();
     expect(await screen.findByText("Sample file · local only")).toBeInTheDocument();
     expect((await screen.findAllByText("Command Palette")).length).toBeGreaterThan(0);
     expect(

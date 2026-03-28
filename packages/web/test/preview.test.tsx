@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { Preview } from "../src/components/Preview";
 import { renderPreviewSections } from "../src/lib/previewMarkdown";
+import { SAMPLE_FILE_CONTENT } from "../src/lib/sampleFile";
 
 describe("Preview", () => {
   it("renders markdown inside an editorial preview surface", () => {
@@ -53,5 +54,18 @@ describe("createApp", () => {
     expect(combinedHtml).toContain('describe(&quot;createApp&quot;');
     expect(combinedHtml).not.toContain("<p>describe(");
     expect(combinedHtml).not.toContain("<p>expect(");
+  });
+
+  it("splits sample-file bullet lists into smaller preview sections for sync", () => {
+    const sections = renderPreviewSections(SAMPLE_FILE_CONTENT);
+
+    expect(sections.map((section) => section.html)).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("Browse your markdown workspace from the sidebar"),
+        expect.stringContaining("Open files instantly from the command palette"),
+        expect.stringContaining("Write in the editor and preview changes side by side")
+      ])
+    );
+    expect(sections.length).toBeGreaterThan(18);
   });
 });

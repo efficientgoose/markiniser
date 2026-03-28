@@ -175,15 +175,20 @@ textarea {
 
 .markdown-preview {
   color: var(--ctp-text);
-  font-family: var(--font-brand);
+  font-family: var(--font-sans);
   font-size: 15px;
-  line-height: 1.9;
+  font-weight: 500;
+  line-height: 1.6;
   letter-spacing: 0;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
 .markdown-preview > :first-child {
+  margin-top: 0;
+}
+
+.markdown-preview .preview-sync-section:first-child > :first-child {
   margin-top: 0;
 }
 
@@ -197,7 +202,7 @@ textarea {
 .markdown-preview h4,
 .markdown-preview h5,
 .markdown-preview h6 {
-  margin: 1.5em 0 0.72em;
+  margin: 1.15em 0 0.45em;
   color: var(--ctp-text);
   font-weight: 500;
   line-height: 1.2;
@@ -228,7 +233,7 @@ textarea {
 .markdown-preview blockquote,
 .markdown-preview pre,
 .markdown-preview table {
-  margin: 0 0 1.15em;
+  margin: 0 0 0.7em;
 }
 
 .markdown-preview p,
@@ -267,7 +272,7 @@ textarea {
 }
 
 .markdown-preview li + li {
-  margin-top: 0.35em;
+  margin-top: 0.2em;
 }
 
 .markdown-preview code {
