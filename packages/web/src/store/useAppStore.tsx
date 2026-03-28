@@ -1,0 +1,180 @@
+import type { TreeNode } from "@markiniser/core";
+import { createContext, useContext, useRef, type ReactNode } from "react";
+import { createStore, type StoreApi } from "zustand/vanilla";
+import { useStore } from "zustand";
+import { fetchFile, fetchFileTree } from "../lib/api";
+import type { CurrentFile } from "../types";
+
+export interface CursorPosition {
+  line: number;
+  column: number;
+}
+
+export interface AppStoreState {
+  fileTree: TreeNode[];
+  isTreeLoading: boolean;
+  currentFile: CurrentFile | null;
+  recentFiles: string[];
+  dirtyContent: string | null;
+  saveStatus: "saved" | "saving" | "unsaved" | "error";
+  isPreviewOpen: boolean;
+  isSidebarOpen: boolean;
+  watcherStatus: "connecting" | "connected" | "disconnected";
+  externalChangeNotice: string | null;
+  externalFileSnapshot: CurrentFile | null;
+  cursorPosition: CursorPosition | null;
+  sidebarWidth: number;
+  previewWidth: number;
+  setFileTree(tree: TreeNode[]): void;
+  setTreeLoading(isLoading: boolean): void;
+  loadTree(): Promise<void>;
+  openFile(fileOrPath: CurrentFile | string): Promise<void>;
+  setDirtyContent(content: string | null): void;
+  setSaveStatus(status: AppStoreState["saveStatus"]): void;
+  setPreviewOpen(isOpen: boolean): void;
+  setSidebarOpen(isOpen: boolean): void;
+  setWatcherStatus(status: AppStoreState["watcherStatus"]): void;
+  setExternalChangeNotice(message: string | null): void;
+  setExternalFileSnapshot(file: CurrentFile | null): void;
+  setCursorPosition(position: CursorPosition | null): void;
+  setSidebarWidth(width: number): void;
+  setPreviewWidth(width: number): void;
+  isDirty(): boolean;
+}
+
+export type AppStore = StoreApi<AppStoreState>;
+
+export function createAppStore(): AppStore {
+  return createStore<AppStoreState>((set, get) => ({
+    fileTree: [],
+    isTreeLoading: true,
+    currentFile: null,
+    recentFiles: [],
+    dirtyContent: null,
+    saveStatus: "saved",
+    isPreviewOpen: true,
+    isSidebarOpen: true,
+    watcherStatus: "connecting",
+    externalChangeNotice: null,
+    externalFileSnapshot: null,
+    cursorPosition: null,
+    sidebarWidth: 300,
+    previewWidth: 0,
+    setFileTree(tree) {
+      set({ fileTree: tree, isTreeLoading: false });
+    },
+    setTreeLoading(isLoading) {
+      set({ isTreeLoading: isLoading });
+    },
+    async loadTree() {
+      set({ isTreeLoading: true });
+      try {
+        const response = await fetchFileTree();
+        set({ fileTree: response.tree, isTreeLoading: false });
+      } catch (error) {
+        set({ isTreeLoading: false });
+        throw error;
+      }
+    },
+    async openFile(fileOrPath) {
+      const file = typeof fileOrPath === "string" ? await fetchFile(fileOrPath) : fileOrPath;
+      const recentFiles = [file.path, ...get().recentFiles.filter((path) => path !== file.path)].slice(0, 3);
+      set({
+        currentFile: file,
+        recentFiles,
+        dirtyContent: null,
+        saveStatus: "saved",
+        externalChangeNotice: null,
+        externalFileSnapshot: null,
+        cursorPosition: null
+      });
+    },
+    setDirtyContent(content) {
+      set({ dirtyContent: content });
+    },
+    setSaveStatus(status) {
+      set({ saveStatus: status });
+    },
+    setPreviewOpen(isOpen) {
+      set({ isPreviewOpen: isOpen });
+    },
+    setSidebarOpen(isOpen) {
+      set({ isSidebarOpen: isOpen });
+    },
+    setWatcherStatus(status) {
+      set({ watcherStatus: status });
+    },
+    setExternalChangeNotice(message) {
+      set({ externalChangeNotice: message });
+    },
+    setExternalFileSnapshot(file) {
+      set({ externalFileSnapshot: file });
+    },
+    setCursorPosition(position) {
+      set((state) => {
+        if (
+          state.cursorPosition?.line === position?.line &&
+          state.cursorPosition?.column === position?.column
+        ) {
+          return state;
+        }
+
+        return { cursorPosition: position };
+      });
+    },
+    setSidebarWidth(width) {
+      set({ sidebarWidth: Math.max(220, Math.min(width, 460)) });
+    },
+    setPreviewWidth(width) {
+      set({ previewWidth: Math.max(280, Math.min(width, 520)) });
+    },
+    isDirty() {
+      return get().dirtyContent !== null;
+    }
+  }));
+}
+
+const AppStoreContext = createContext<AppStore | null>(null);
+
+export function AppStoreProvider({
+  children,
+  store
+}: {
+  children: ReactNode;
+  store?: AppStore;
+}) {
+  const storeRef = useRef<AppStore | null>(null);
+  if (storeRef.current === null) {
+    storeRef.current = store ?? createAppStore();
+  } else if (store) {
+    storeRef.current = store;
+  }
+
+  if (storeRef.current === null) {
+    storeRef.current = createAppStore();
+  }
+
+  return (
+    <AppStoreContext.Provider value={storeRef.current}>
+      {children}
+    </AppStoreContext.Provider>
+  );
+}
+
+export function useAppStore<T>(selector: (state: AppStoreState) => T): T {
+  const store = useContext(AppStoreContext);
+  if (!store) {
+    throw new Error("useAppStore must be used inside AppStoreProvider.");
+  }
+
+  return useStore(store, selector);
+}
+
+export function useAppStoreApi(): AppStore {
+  const store = useContext(AppStoreContext);
+  if (!store) {
+    throw new Error("useAppStoreApi must be used inside AppStoreProvider.");
+  }
+
+  return store;
+}

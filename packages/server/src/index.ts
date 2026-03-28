@@ -5,6 +5,14 @@ import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Fastify, { type FastifyInstance } from "fastify";
 import { FRONTEND_DIST_LABEL } from "./constants.js";
 import { registerRoutes } from "./routes.js";
+export {
+  getBrowserOpenCommand,
+  openBrowser
+} from "./browser.js";
+export {
+  createWatcherSupervisor,
+  startWatcherInBackground
+} from "./runtime.js";
 import { registerStaticHandling } from "./static.js";
 import { registerWebSocket } from "./ws.js";
 

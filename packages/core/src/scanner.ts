@@ -82,6 +82,15 @@ function insertFileNode(rootNode: TreeNode, file: FlatFile): void {
   }
 }
 
+function isPermissionError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null || !("code" in error)) {
+    return false;
+  }
+
+  const code = (error as NodeJS.ErrnoException).code;
+  return code === "EACCES" || code === "EPERM";
+}
+
 export async function scanMarkdownFiles(config: MarkiniserConfig): Promise<ScanResult> {
   const ignore = normalizeIgnorePatterns(config.ignore);
   const filesByRoot = await Promise.all(
@@ -92,25 +101,36 @@ export async function scanMarkdownFiles(config: MarkiniserConfig): Promise<ScanR
         dot: true,
         followSymbolicLinks: true,
         ignore,
-        onlyFiles: true
+        onlyFiles: true,
+        suppressErrors: true
       });
 
-      const files = await Promise.all(
-        markdownPaths.map(async (filePath) => {
+      const files = (
+        await Promise.all(
+          markdownPaths.map(async (filePath) => {
+            try {
           const [content, metadata] = await Promise.all([
             readFile(filePath, "utf8"),
             stat(filePath)
           ]);
 
-          return {
-            path: filePath,
-            name: basename(filePath),
-            content,
-            size: metadata.size,
-            lastModified: metadata.mtime.toISOString()
-          } satisfies FlatFile;
-        })
-      );
+              return {
+                path: filePath,
+                name: basename(filePath),
+                content,
+                size: metadata.size,
+                lastModified: metadata.mtime.toISOString()
+              } satisfies FlatFile;
+            } catch (error) {
+              if (isPermissionError(error)) {
+                return null;
+              }
+
+              throw error;
+            }
+          })
+        )
+      ).filter((file): file is FlatFile => file !== null);
 
       return {
         root,

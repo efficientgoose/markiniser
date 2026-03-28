@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -76,5 +76,28 @@ describe("scanMarkdownFiles", () => {
     const result = await scanMarkdownFiles(config);
 
     expect(result.files.map((file) => file.path)).toEqual([join(root, "content/keep.md")]);
+  });
+
+  it("skips unreadable directories instead of aborting the scan", async () => {
+    const root = await makeTempDir();
+    const unreadableDirectory = join(root, "restricted");
+    await writeMarkdownFile(root, "content/keep.md", "# keep");
+    await mkdir(unreadableDirectory, { recursive: true });
+    await writeMarkdownFile(root, "restricted/secret.md", "# secret");
+    await chmod(unreadableDirectory, 0o000);
+
+    try {
+      const config: MarkiniserConfig = {
+        roots: [root],
+        ignore: [".git"],
+        port: 4000
+      };
+
+      const result = await scanMarkdownFiles(config);
+
+      expect(result.files.map((file) => file.path)).toContain(join(root, "content/keep.md"));
+    } finally {
+      await chmod(unreadableDirectory, 0o755);
+    }
   });
 });

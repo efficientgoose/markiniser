@@ -10,7 +10,7 @@ export interface FileWatcherEventMap {
   "file-added": [payload: { path: string; tree: TreeNode[]; file?: FlatFile }];
   "file-changed": [payload: { path: string; tree: TreeNode[]; file?: FlatFile }];
   "file-removed": [payload: { path: string; tree: TreeNode[] }];
-  error: [error: Error];
+  "watcher-warning": [warning: Error & { code?: string }];
 }
 
 export interface FileWatcher extends EventEmitter<FileWatcherEventMap> {
@@ -87,7 +87,9 @@ class MarkiniserWatcher extends EventEmitter<FileWatcherEventMap> implements Fil
       void this.handleRemove(filePath);
     });
     this.fsWatcher.on("error", (error) => {
-      this.emit("error", error instanceof Error ? error : new Error(String(error)));
+      const normalizedError =
+        error instanceof Error ? error : new Error(String(error));
+      this.emit("watcher-warning", normalizedError as Error & { code?: string });
     });
   }
 

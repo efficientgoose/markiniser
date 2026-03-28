@@ -1,0 +1,244 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --ctp-base: #1e1e2e;
+  --ctp-mantle: #181825;
+  --ctp-crust: #11111b;
+  --ctp-surface0: #313244;
+  --ctp-surface1: #45475a;
+  --ctp-surface2: #585b70;
+  --ctp-text: #cdd6f4;
+  --ctp-subtext1: #bac2de;
+  --ctp-subtext0: #a6adc8;
+  --ctp-overlay2: #9399b2;
+  --ctp-lavender: #b4befe;
+  --ctp-mauve: #cba6f7;
+  --ctp-teal: #94e2d5;
+  --ctp-green: #a6e3a1;
+  --ctp-red: #f38ba8;
+  --ctp-peach: #fab387;
+  --ctp-blue: #89b4fa;
+  --ctp-yellow: #f9e2af;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Fira Code", ui-monospace, SFMono-Regular, monospace;
+  --font-brand: "Literata", Georgia, serif;
+  font-family: var(--font-sans);
+  background: var(--ctp-base);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--ctp-base);
+  color: var(--ctp-text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(180, 190, 254, 0.28);
+  color: var(--ctp-text);
+}
+
+.theme-mocha {
+  min-height: 100vh;
+  background: var(--ctp-base);
+  color: var(--ctp-text);
+  font-family: var(--font-sans);
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.cm-editor {
+  height: 100%;
+}
+
+.cm-scroller {
+  overflow: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.cm-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.preview-pane {
+  scrollbar-width: none;
+}
+
+.preview-pane::-webkit-scrollbar {
+  display: none;
+}
+
+.preview-document {
+  backdrop-filter: blur(14px);
+}
+
+.markdown-preview {
+  color: var(--ctp-text);
+  font-family: var(--font-brand);
+  font-size: 15px;
+  line-height: 1.9;
+  letter-spacing: 0;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.markdown-preview > :first-child {
+  margin-top: 0;
+}
+
+.markdown-preview > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  margin: 1.5em 0 0.72em;
+  color: var(--ctp-text);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.markdown-preview h1 {
+  font-size: 1.9rem;
+}
+
+.markdown-preview h2 {
+  font-size: 1.55rem;
+}
+
+.markdown-preview h3 {
+  font-size: 1.28rem;
+}
+
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  font-size: 1.05rem;
+}
+
+.markdown-preview p,
+.markdown-preview ul,
+.markdown-preview ol,
+.markdown-preview blockquote,
+.markdown-preview pre,
+.markdown-preview table {
+  margin: 0 0 1.15em;
+}
+
+.markdown-preview p,
+.markdown-preview li,
+.markdown-preview td,
+.markdown-preview th {
+  color: var(--ctp-subtext1);
+}
+
+.markdown-preview strong {
+  color: var(--ctp-text);
+  font-weight: 600;
+}
+
+.markdown-preview hr {
+  border: 0;
+  border-top: 1px solid rgba(88, 91, 112, 0.24);
+  margin: 2em 0;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  padding-left: 1.35em;
+}
+
+.markdown-preview li + li {
+  margin-top: 0.35em;
+}
+
+.markdown-preview code {
+  border: 1px solid rgba(88, 91, 112, 0.2);
+  border-radius: 7px;
+  background: rgba(49, 50, 68, 0.72);
+  padding: 0.13em 0.42em;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--ctp-lavender);
+}
+
+.markdown-preview pre {
+  overflow: auto;
+  border: 1px solid rgba(88, 91, 112, 0.18);
+  border-radius: 16px;
+  background: rgba(24, 24, 37, 0.92);
+  padding: 1.15em 1.2em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.markdown-preview pre code {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--ctp-text);
+}
+
+.markdown-preview blockquote {
+  border-left: 2px solid rgba(180, 190, 254, 0.72);
+  color: var(--ctp-subtext1);
+  margin-left: 0;
+  padding-left: 1.1em;
+  font-style: italic;
+}
+
+.markdown-preview a {
+  color: var(--ctp-blue);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(137, 180, 250, 0.28);
+}
+
+.markdown-preview a:hover {
+  border-bottom-color: rgba(137, 180, 250, 0.48);
+}
+
+.markdown-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(24, 24, 37, 0.55);
+}
+
+.markdown-preview th,
+.markdown-preview td {
+  border: 1px solid rgba(88, 91, 112, 0.18);
+  padding: 0.72em 0.82em;
+  text-align: left;
+}
+
+.markdown-preview th {
+  background: rgba(49, 50, 68, 0.6);
+  color: var(--ctp-text);
+}

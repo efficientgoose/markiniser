@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node /tmp/ua-project-scan.js \"/Users/macbook/Desktop/Personal Projects/markiniser\" \"/Users/macbook/Desktop/Personal Projects/markiniser/.understand-anything/intermediate/scan-result.json\")",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(/tmp/ua-file-analyzer-input-0.json:*)",
+      "Bash(/tmp/ua-file-analyzer-input-1.json:*)",
+      "Bash(node:*)",
+      "Bash(/tmp/ua-arch-input.json:*)",
+      "Bash(/tmp/ua-tour-input.json:*)",
+      "Bash(cd:*)",
+      "Bash(npm install:*)",
+      "Bash(npx pnpm:*)",
+      "Bash(brew list:*)",
+      "Bash(corepack enable:*)",
+      "Bash(pnpm --version)",
+      "Bash(GRAPH_DIR=\"/Users/macbook/Desktop/Personal Projects/markiniser\" npx vite --open)"
+    ]
+  }
+}

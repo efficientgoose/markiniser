@@ -7,14 +7,16 @@ const program = new Command();
 program
   .name("markiniser")
   .option("-p, --port <port>", "Override the configured port", (value) => Number.parseInt(value, 10))
-  .option("-c, --config <path>", "Path to a config file");
+  .option("-c, --config <path>", "Path to a config file")
+  .option("--no-open", "Do not open the app in a browser automatically")
+  .option("--no-watch", "Disable live file watching");
 
 program.parse(process.argv);
 
 const options = program.opts();
 
 async function main() {
-  const [{ createCore, loadConfig }, { createServer }, path] = await Promise.all([
+  const [{ createCore, loadConfig }, { createServer, createWatcherSupervisor, openBrowser, startWatcherInBackground }, path] = await Promise.all([
     import("@markiniser/core"),
     import("@markiniser/server"),
     import("node:path")
@@ -26,7 +28,12 @@ async function main() {
   });
   const core = await createCore(config);
   const initialScan = await core.scanner.scan();
-  await core.watcher.start();
+  const watcherSupervisor = createWatcherSupervisor({
+    watcher: core.watcher,
+    onWarning(message) {
+      console.warn(message);
+    }
+  });
 
   const server = await createServer({
     core,
@@ -37,7 +44,7 @@ async function main() {
   });
 
   const shutdown = async (signal) => {
-    await Promise.allSettled([server.close(), core.watcher.stop()]);
+    await Promise.allSettled([server.close(), watcherSupervisor.stop()]);
     console.log(`\nShutting down Markiniser (${signal})`);
     process.exit(0);
   };
@@ -49,13 +56,31 @@ async function main() {
     void shutdown("SIGTERM");
   });
 
+  const appUrl = `http://127.0.0.1:${config.port}`;
+
   await server.listen({
     host: "127.0.0.1",
     port: config.port
   });
 
-  console.log(`Markiniser running at http://127.0.0.1:${config.port}`);
+  console.log(`Markiniser running at ${appUrl}`);
   console.log(`Indexed ${initialScan.files.length} markdown files`);
+
+  if (options.open) {
+    openBrowser(appUrl, {
+      onWarning(message) {
+        console.warn(message);
+      }
+    });
+  }
+
+  if (options.watch) {
+    startWatcherInBackground(watcherSupervisor, (message) => {
+      console.warn(message);
+    });
+  } else {
+    console.warn("[warn] File watching disabled via --no-watch");
+  }
 }
 
 main().catch((error) => {
