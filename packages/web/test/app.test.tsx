@@ -168,6 +168,42 @@ describe("App", () => {
     expect(screen.getAllByText("guide.md").length).toBeGreaterThan(0);
   });
 
+  it("switches between preview-only and editor-only modes from the pane controls", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByText("guide.md"));
+
+    expect(await screen.findByLabelText("Markdown editor")).toBeInTheDocument();
+    expect(screen.getByTestId("preview-surface")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Toggle preview focus" }));
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Markdown editor")).not.toBeInTheDocument();
+      expect(screen.queryByText("Saved")).not.toBeInTheDocument();
+      expect(screen.getByTestId("preview-surface")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Show split view" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Show split view" }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Markdown editor")).toBeInTheDocument();
+      expect(screen.getByTestId("preview-surface")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Show split view" })).not.toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Toggle editor focus" }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Markdown editor")).toBeInTheDocument();
+      expect(screen.queryByTestId("preview-surface")).not.toBeInTheDocument();
+      expect(screen.getByText("Saved")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Show split view" })).toBeInTheDocument();
+    });
+  });
+
   it("opens the command palette with Cmd/Ctrl+K and shows recent files plus commands", async () => {
     const user = userEvent.setup();
     render(<App />);

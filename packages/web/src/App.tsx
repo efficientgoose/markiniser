@@ -7,7 +7,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent
 } from "react";
-import { BookOpen, BriefcaseBusiness, CheckCheck, Eye, EyeOff, MousePointerClick, PanelLeft, Pencil, Search } from "lucide-react";
+import { BookOpen, BriefcaseBusiness, CheckCheck, Columns2, Eye, MousePointerClick, PanelLeft, Pencil, PencilRuler, Search } from "lucide-react";
 import logo from "./assets/Markiniser Logo.png";
 import { CommandPalette } from "./components/CommandPalette";
 import { FileTreeSidebar } from "./components/FileTreeSidebar";
@@ -48,10 +48,14 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
   const sidebarWidth = useAppStore((state) => state.sidebarWidth);
   const previewWidth = useAppStore((state) => state.previewWidth);
   const [activeResizeMode, setActiveResizeMode] = useState<"sidebar" | "preview" | null>(null);
+  const [isPreviewMaximized, setIsPreviewMaximized] = useState(false);
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
   const previewRef = useRef<PreviewHandle | null>(null);
   const syncLockRef = useRef<"editor" | "preview" | null>(null);
   const syncReleaseFrameRef = useRef<number | null>(null);
+  const isSplitView = isPreviewOpen && !isPreviewMaximized;
+  const isEditorOnly = !isPreviewOpen && !isPreviewMaximized;
+  const isPreviewOnly = isPreviewMaximized;
 
   useFileWatcher();
   const { saveNow } = useAutosave({
@@ -93,7 +97,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
   }, []);
 
   const alignPreviewToEditor = useCallback(() => {
-    if (!isPreviewOpen) {
+    if (!isSplitView) {
       return;
     }
 
@@ -111,7 +115,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
     syncLockRef.current = "editor";
     preview.scrollToPosition(position);
     releaseSyncLock("editor");
-  }, [isPreviewOpen, releaseSyncLock]);
+  }, [isSplitView, releaseSyncLock]);
   const editorContent = dirtyContent ?? currentFile?.content ?? "";
 
   useEffect(() => {
@@ -123,7 +127,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
   }, []);
 
   useEffect(() => {
-    if (!isPreviewOpen) {
+    if (!isSplitView) {
       return;
     }
 
@@ -134,7 +138,13 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
     return () => {
       cancelAnimationFrame(frameId);
     };
-  }, [alignPreviewToEditor, currentFile?.path, editorContent, isPreviewOpen]);
+  }, [alignPreviewToEditor, currentFile?.path, editorContent, isSplitView]);
+
+  useEffect(() => {
+    if (!isPreviewOpen && isPreviewMaximized) {
+      setIsPreviewMaximized(false);
+    }
+  }, [isPreviewMaximized, isPreviewOpen]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -199,21 +209,21 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
     };
   }, [store]);
 
-  const collapsedBalancedLayout = !isSidebarOpen && isPreviewOpen;
-  const balancedOpenLayout = isSidebarOpen && isPreviewOpen && previewWidth === 0;
+  const balancedOpenLayout = isSidebarOpen && isSplitView && previewWidth === 0;
+  const collapsedBalancedLayout = !isSidebarOpen && isSplitView;
   const panelStyle = {
     gridTemplateColumns: collapsedBalancedLayout
       ? "0px 8px minmax(0, 1fr) 8px minmax(0, 1fr)"
       : balancedOpenLayout
         ? `${sidebarWidth}px 8px minmax(0, 1fr) 8px minmax(0, 1fr)`
       : `${isSidebarOpen ? `${sidebarWidth}px` : "0px"} 8px minmax(0, 1fr) ${
-          isPreviewOpen ? `8px ${previewWidth}px` : ""
+          isSplitView ? `8px ${previewWidth}px` : ""
         }`,
     transition: activeResizeMode ? "none" : "grid-template-columns 220ms ease"
   };
 
   const handleEditorScrollPositionChange = useEffectEvent((position: SectionScrollPosition) => {
-    if (!isPreviewOpen || syncLockRef.current === "preview") {
+    if (!isSplitView || syncLockRef.current === "preview") {
       return;
     }
 
@@ -223,7 +233,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
   });
 
   const handlePreviewScrollPositionChange = useEffectEvent((position: SectionScrollPosition) => {
-    if (!isPreviewOpen || syncLockRef.current === "editor") {
+    if (!isSplitView || syncLockRef.current === "editor") {
       return;
     }
 
@@ -239,14 +249,55 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
     resizeMode.current = mode;
     setActiveResizeMode(mode);
   };
-  const chromeButtonClass =
-    "rounded-md border border-[color:rgba(255,255,255,0.06)] bg-[color:rgba(49,50,68,0.5)] px-3.5 py-1 text-sm text-[color:var(--ctp-subtext1)] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition hover:bg-[color:rgba(69,71,90,0.52)] hover:text-[color:var(--ctp-text)]";
   const iconButtonClass =
     "flex h-7 w-7 items-center justify-center rounded-md border border-[color:rgba(255,255,255,0.06)] bg-[color:rgba(49,50,68,0.5)] text-[color:var(--ctp-subtext1)] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition hover:bg-[color:rgba(69,71,90,0.52)] hover:text-[color:var(--ctp-text)]";
   const searchTriggerClass =
     "flex h-8 w-full min-w-[13rem] max-w-[16.75rem] items-center gap-3 rounded-lg border border-[color:rgba(255,255,255,0.05)] bg-[color:rgba(49,50,68,0.32)] px-4 text-[13px] text-[color:var(--ctp-subtext0)] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:bg-[color:rgba(49,50,68,0.42)] hover:text-[color:var(--ctp-subtext1)]";
-  const headerIconButtonClass =
+  const panelModeButtonClass =
     "flex h-8 w-10 items-center justify-center rounded-lg border border-[color:rgba(255,255,255,0.05)] bg-[color:rgba(49,50,68,0.32)] text-[color:var(--ctp-subtext0)] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:bg-[color:rgba(49,50,68,0.42)] hover:text-[color:var(--ctp-subtext1)]";
+  const activePanelModeButtonStyle = {
+    backgroundColor: "rgba(166, 130, 214, 0.5)",
+    borderColor: "rgba(166, 130, 214, 0.55)",
+    color: "var(--ctp-crust)",
+    boxShadow: "0 0 0 1px rgba(166, 130, 214, 0.18)"
+  } as const;
+
+  const toggleEditorFocus = () => {
+    if (isEditorOnly) {
+      store.getState().setPreviewOpen(true);
+      return;
+    }
+
+    setIsPreviewMaximized(false);
+    store.getState().setPreviewOpen(false);
+  };
+
+  const togglePreviewFocus = () => {
+    if (isPreviewOnly) {
+      setIsPreviewMaximized(false);
+      store.getState().setPreviewOpen(true);
+      return;
+    }
+
+    store.getState().setPreviewOpen(true);
+    setIsPreviewMaximized(true);
+  };
+
+  const togglePreviewPanel = () => {
+    if (isPreviewOnly) {
+      setIsPreviewMaximized(false);
+      store.getState().setPreviewOpen(false);
+      return;
+    }
+
+    setIsPreviewMaximized(false);
+    store.getState().setPreviewOpen(!store.getState().isPreviewOpen);
+  };
+
+  const showSplitView = () => {
+    setIsPreviewMaximized(false);
+    store.getState().setPreviewOpen(true);
+  };
 
   return (
     <div data-testid="app-shell" className="theme-mocha font-[var(--font-sans)]">
@@ -288,16 +339,6 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
                 </span>
                 <span>K</span>
               </span>
-            </button>
-            <button
-              type="button"
-              aria-label="Toggle preview"
-              className={headerIconButtonClass}
-              onClick={() => {
-                store.getState().setPreviewOpen(!isPreviewOpen);
-              }}
-            >
-              {isPreviewOpen ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
         </div>
@@ -379,7 +420,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
           </button>
         ) : null}
 
-        <section className="flex min-h-0 flex-col bg-[color:var(--ctp-base)]">
+        <section className="relative flex min-h-0 flex-col bg-[color:var(--ctp-base)]">
           {externalChangeNotice ? (
             <div className="mx-6 mt-6 rounded-lg border border-[color:var(--ctp-peach)]/40 bg-[color:var(--ctp-peach)]/10 px-4 py-3 text-sm text-[color:var(--ctp-peach)]">
               <div>{externalChangeNotice}</div>
@@ -414,7 +455,65 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
             </div>
           ) : null}
 
-          {currentFile ? (
+          <div className="absolute right-2 top-2 z-10 flex flex-col items-end gap-2">
+            {!isEditorOnly ? (
+              <button
+                type="button"
+                aria-label="Toggle editor focus"
+                aria-pressed={isEditorOnly}
+                className={panelModeButtonClass}
+                style={isEditorOnly ? activePanelModeButtonStyle : undefined}
+                onClick={toggleEditorFocus}
+              >
+                <PencilRuler size={16} />
+              </button>
+            ) : null}
+            {!isSplitView ? (
+              <button
+                type="button"
+                aria-label="Show split view"
+                className={panelModeButtonClass}
+                onClick={showSplitView}
+              >
+                <Columns2 size={16} />
+              </button>
+            ) : null}
+            {!isPreviewOnly ? (
+              <button
+                type="button"
+                aria-label="Toggle preview focus"
+                aria-pressed={isPreviewOnly}
+                className={panelModeButtonClass}
+                style={isPreviewOnly ? activePanelModeButtonStyle : undefined}
+                onClick={togglePreviewFocus}
+              >
+                <Eye size={16} />
+              </button>
+            ) : null}
+          </div>
+
+          {isPreviewOnly ? (
+            <div className="min-h-0 flex-1">
+              {currentFile ? (
+                <Preview
+                  ref={previewRef}
+                  content={editorContent}
+                  onScrollPositionChange={handlePreviewScrollPositionChange}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center px-4 py-6">
+                  <div className="flex w-full max-w-xs flex-col items-center rounded-2xl border border-dashed border-[color:rgba(88,91,112,0.3)] bg-[color:rgba(49,50,68,0.42)] px-6 py-8 text-center text-sm text-[color:var(--ctp-subtext0)]">
+                    <BookOpen
+                      aria-hidden="true"
+                      size={44}
+                      className="mb-5 text-[color:var(--ctp-subtext0)]"
+                    />
+                    <span>Open a markdown file to see the live preview.</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : currentFile ? (
             <>
               <div className="min-h-0 flex-1 p-2">
                 <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-[color:var(--ctp-base)]">
@@ -426,9 +525,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
                       onSave={() => {
                         void saveNow();
                       }}
-                      onTogglePreview={() => {
-                        store.getState().setPreviewOpen(!store.getState().isPreviewOpen);
-                      }}
+                      onTogglePreview={togglePreviewPanel}
                       onCursorChange={(position) => {
                         store.getState().setCursorPosition(position);
                       }}
@@ -437,13 +534,15 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
                   </div>
                 </div>
               </div>
-              <StatusBar
-                size={dirtyContent?.length ?? currentFile.size}
-                lastModified={currentFile.lastModified}
-                saveStatus={saveStatus}
-                cursorPosition={cursorPosition}
-                isVirtual={currentFile.isVirtual}
-              />
+              {!isPreviewOnly ? (
+                <StatusBar
+                  size={dirtyContent?.length ?? currentFile.size}
+                  lastModified={currentFile.lastModified}
+                  saveStatus={saveStatus}
+                  cursorPosition={cursorPosition}
+                  isVirtual={currentFile.isVirtual}
+                />
+              ) : null}
             </>
           ) : (
             <div className="flex h-full min-h-[320px] items-center justify-center px-6 py-6">
@@ -473,7 +572,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
           )}
         </section>
 
-        {isPreviewOpen ? (
+        {isSplitView ? (
           <>
             <div
               className="cursor-col-resize bg-[color:var(--ctp-crust)]"
