@@ -1,13 +1,26 @@
 import type {
+  BrowseRootResponse,
   CurrentFile,
   FileTreeResponse,
+  RootConfigResponse,
   SaveFileResponse,
-  SearchResponse
+  SearchResponse,
+  UpdateRootResponse
 } from "../types";
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+    let message = `Request failed with status ${response.status}`;
+    try {
+      const data = (await response.json()) as { error?: string };
+      if (data.error) {
+        message = data.error;
+      }
+    } catch {
+      // ignore parse failures and keep the fallback message
+    }
+
+    throw new Error(message);
   }
 
   return (await response.json()) as T;
@@ -40,6 +53,30 @@ export async function saveFile(
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ content })
+    })
+  );
+}
+
+export async function fetchRootConfig(): Promise<RootConfigResponse> {
+  return parseJsonResponse<RootConfigResponse>(await fetch("/api/config"));
+}
+
+export async function browseRootPath(): Promise<BrowseRootResponse> {
+  return parseJsonResponse<BrowseRootResponse>(
+    await fetch("/api/config/root/browse", {
+      method: "POST"
+    })
+  );
+}
+
+export async function updateRootPath(path: string): Promise<UpdateRootResponse> {
+  return parseJsonResponse<UpdateRootResponse>(
+    await fetch("/api/config/root", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ path })
     })
   );
 }

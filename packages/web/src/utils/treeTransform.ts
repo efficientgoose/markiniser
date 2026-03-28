@@ -38,10 +38,21 @@ export function countMarkdownFiles(element: TreeViewElement): number {
   }, 0);
 }
 
+function collectFirstFolderBranch(element: TreeViewElement): string[] {
+  if (element.type !== "folder") {
+    return [];
+  }
+
+  const firstChildFolder = (element.children ?? []).find((child) => child.type === "folder");
+  if (!firstChildFolder) {
+    return [element.id];
+  }
+
+  return [element.id, ...collectFirstFolderBranch(firstChildFolder)];
+}
+
 export function collectFolderIds(elements: TreeViewElement[]): string[] {
-  return elements
-    .filter((element) => element.type === "folder")
-    .map((element) => element.id);
+  return elements.flatMap((element) => collectFirstFolderBranch(element));
 }
 
 export function findAncestorFolderIds(

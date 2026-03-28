@@ -98,7 +98,7 @@ describe("FileTreeSidebar", () => {
     expect(store.getState().currentFile?.path).toBe("/docs/guide.md");
   });
 
-  it("expands only root folders by default", async () => {
+  it("expands the first folder branch by default", async () => {
     const user = userEvent.setup();
     const store = createAppStore();
     store.getState().setFileTree([
@@ -133,10 +133,6 @@ describe("FileTreeSidebar", () => {
     );
 
     expect(screen.getByRole("button", { name: "docs" })).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("button", { name: "nested" })).toHaveAttribute("aria-expanded", "false");
-
-    await user.click(screen.getByRole("button", { name: "nested" }));
-
     expect(screen.getByRole("button", { name: "nested" })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("button", { name: "child.md" })).toBeInTheDocument();
   });

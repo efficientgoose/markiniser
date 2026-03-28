@@ -14,6 +14,19 @@ export interface FileTreeResponse {
   tree: TreeNode[];
 }
 
+export interface RootConfigResponse {
+  roots: string[];
+}
+
+export interface UpdateRootResponse {
+  roots: string[];
+  tree: TreeNode[];
+}
+
+export interface BrowseRootResponse {
+  path: string | null;
+}
+
 export interface SearchResponse {
   results: SearchResult[];
   count: number;

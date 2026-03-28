@@ -131,4 +131,33 @@ describe("createAppStore", () => {
     expect(store.getState().cursorPosition).toEqual({ line: 12, column: 8 });
     expect(store.getState().externalFileSnapshot?.content).toBe("# External");
   });
+
+  it("clears the active file state when a root update excludes the open file", () => {
+    const store = createAppStore();
+
+    store.getState().openFile({
+      path: "/docs/guide.md",
+      name: "guide.md",
+      content: "# Guide",
+      lastModified: "2026-03-28T00:00:00.000Z",
+      size: 7
+    });
+    store.getState().setDirtyContent("draft");
+    store.getState().setCursorPosition({ line: 3, column: 5 });
+
+    store.getState().applyRootUpdate("/workspace/notes", [
+      {
+        id: "root",
+        name: "notes",
+        path: "/workspace/notes",
+        isFolder: true,
+        children: []
+      }
+    ]);
+
+    expect(store.getState().currentRootPath).toBe("/workspace/notes");
+    expect(store.getState().currentFile).toBeNull();
+    expect(store.getState().dirtyContent).toBeNull();
+    expect(store.getState().cursorPosition).toBeNull();
+  });
 });

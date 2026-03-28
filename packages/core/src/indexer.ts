@@ -5,6 +5,7 @@ export interface SearchIndexer {
   addToIndex(file: FlatFile): void;
   removeFromIndex(filePath: string): void;
   updateIndex(file: FlatFile): void;
+  reset(files: FlatFile[]): void;
   search(query: string): SearchResult[];
 }
 
@@ -62,6 +63,17 @@ export function createSearchIndexer(files: FlatFile[] = []): SearchIndexer {
     index.update({ ...file });
   };
 
+  const reset = (files: FlatFile[]) => {
+    for (const file of documents.values()) {
+      index.remove({ ...file });
+    }
+    documents.clear();
+
+    for (const file of files) {
+      addToIndex(file);
+    }
+  };
+
   for (const file of files) {
     addToIndex(file);
   }
@@ -70,6 +82,7 @@ export function createSearchIndexer(files: FlatFile[] = []): SearchIndexer {
     addToIndex,
     removeFromIndex,
     updateIndex,
+    reset,
     search(query: string): SearchResult[] {
       const normalizedQuery = query.trim();
       if (!normalizedQuery) {

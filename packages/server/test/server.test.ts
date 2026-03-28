@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -162,6 +162,83 @@ describe("createServer", () => {
     expect(response.json()).toEqual({
       results: [],
       count: 0
+    });
+
+    await server.close();
+  });
+
+  it("updates the primary root, writes it back to config, and returns the new tree", async () => {
+    const configDir = await makeTempDir("markiniser-server-config-");
+    const initialRoot = await makeTempDir("markiniser-server-initial-root-");
+    const nextRoot = await makeTempDir("markiniser-server-next-root-");
+    await writeMarkdownFile(initialRoot, "docs/guide.md", "# Guide");
+    const nextFile = await writeMarkdownFile(nextRoot, "notes/updated.md", "# Updated");
+    const configPath = join(configDir, ".markiniserrc.json");
+
+    await writeFile(
+      configPath,
+      JSON.stringify(
+        {
+          roots: [initialRoot],
+          ignore: [".git"],
+          port: 4130
+        },
+        null,
+        2
+      ),
+      "utf8"
+    );
+
+    const core = await createCore({
+      roots: [initialRoot],
+      ignore: [".git"],
+      port: 4130
+    });
+    const { createRootConfigController } = await import("../src/rootConfig.js");
+    const server = await createServer({
+      core,
+      frontendDistPath: join(configDir, "missing-dist"),
+      rootConfigController: createRootConfigController({
+        core,
+        configPath,
+        browseForRoot: async () => nextRoot
+      })
+    });
+
+    await server.ready();
+
+    const updateResponse = await server.inject({
+      method: "PUT",
+      url: "/api/config/root",
+      payload: {
+        path: nextRoot
+      }
+    });
+
+    expect(updateResponse.statusCode).toBe(200);
+    expect(updateResponse.json()).toEqual({
+      roots: [nextRoot],
+      tree: core.getTree()
+    });
+    expect(core.config.roots).toEqual([nextRoot]);
+    expect(core.getTree()[0]?.path).toBe(nextRoot);
+
+    const persistedConfig = JSON.parse(await readFile(configPath, "utf8")) as { roots: string[] };
+    expect(persistedConfig.roots).toEqual([nextRoot]);
+
+    const readResponse = await server.inject({
+      method: "GET",
+      url: `/api/files/${encodeURIComponent(nextFile)}`
+    });
+    expect(readResponse.statusCode).toBe(200);
+
+    const browseResponse = await server.inject({
+      method: "POST",
+      url: "/api/config/root/browse"
+    });
+    expect(browseResponse.statusCode).toBe(200);
+    expect(browseResponse.json()).toEqual({
+      path: nextRoot
     });
 
     await server.close();

@@ -13,6 +13,7 @@ export interface CursorPosition {
 export interface AppStoreState {
   fileTree: TreeNode[];
   isTreeLoading: boolean;
+  currentRootPath: string | null;
   currentFile: CurrentFile | null;
   recentFiles: string[];
   dirtyContent: string | null;
@@ -29,6 +30,7 @@ export interface AppStoreState {
   setTreeLoading(isLoading: boolean): void;
   loadTree(): Promise<void>;
   openFile(fileOrPath: CurrentFile | string): Promise<void>;
+  applyRootUpdate(rootPath: string, tree: TreeNode[]): void;
   setDirtyContent(content: string | null): void;
   setSaveStatus(status: AppStoreState["saveStatus"]): void;
   setPreviewOpen(isOpen: boolean): void;
@@ -48,6 +50,7 @@ export function createAppStore(): AppStore {
   return createStore<AppStoreState>((set, get) => ({
     fileTree: [],
     isTreeLoading: true,
+    currentRootPath: null,
     currentFile: null,
     recentFiles: [],
     dirtyContent: null,
@@ -70,7 +73,11 @@ export function createAppStore(): AppStore {
       set({ isTreeLoading: true });
       try {
         const response = await fetchFileTree();
-        set({ fileTree: response.tree, isTreeLoading: false });
+        set({
+          fileTree: response.tree,
+          currentRootPath: response.tree[0]?.path ?? get().currentRootPath,
+          isTreeLoading: false
+        });
       } catch (error) {
         set({ isTreeLoading: false });
         throw error;
@@ -87,6 +94,24 @@ export function createAppStore(): AppStore {
         externalChangeNotice: null,
         externalFileSnapshot: null,
         cursorPosition: null
+      });
+    },
+    applyRootUpdate(rootPath, tree) {
+      const currentFile = get().currentFile;
+      const fileStillInsideRoot = currentFile
+        ? currentFile.path === rootPath || currentFile.path.startsWith(`${rootPath}/`)
+        : false;
+
+      set({
+        currentRootPath: rootPath,
+        fileTree: tree,
+        isTreeLoading: false,
+        currentFile: fileStillInsideRoot ? currentFile : null,
+        dirtyContent: fileStillInsideRoot ? get().dirtyContent : null,
+        saveStatus: fileStillInsideRoot ? get().saveStatus : "saved",
+        externalChangeNotice: fileStillInsideRoot ? get().externalChangeNotice : null,
+        externalFileSnapshot: fileStillInsideRoot ? get().externalFileSnapshot : null,
+        cursorPosition: fileStillInsideRoot ? get().cursorPosition : null
       });
     },
     setDirtyContent(content) {

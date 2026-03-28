@@ -14,6 +14,7 @@ export interface FileWatcherEventMap {
 }
 
 export interface FileWatcher extends EventEmitter<FileWatcherEventMap> {
+  isRunning(): boolean;
   start(): Promise<void>;
   stop(): Promise<void>;
 }
@@ -100,6 +101,10 @@ class MarkiniserWatcher extends EventEmitter<FileWatcherEventMap> implements Fil
 
     await this.fsWatcher.close();
     this.fsWatcher = undefined;
+  }
+
+  isRunning(): boolean {
+    return this.fsWatcher !== undefined;
   }
 
   private async handleUpsert(

@@ -16,16 +16,17 @@ program.parse(process.argv);
 const options = program.opts();
 
 async function main() {
-  const [{ createCore, loadConfig }, { createServer, createWatcherSupervisor, openBrowser, startWatcherInBackground }, path] = await Promise.all([
+  const [{ createCore, loadConfigWithDetails }, { createRootConfigController, createServer, createWatcherSupervisor, openBrowser, pickDirectory, startWatcherInBackground }, path] = await Promise.all([
     import("@markiniser/core"),
     import("@markiniser/server"),
     import("node:path")
   ]);
 
-  const config = await loadConfig({
+  const loadedConfig = await loadConfigWithDetails({
     configPath: options.config,
     port: options.port
   });
+  const config = loadedConfig.config;
   const core = await createCore(config);
   const initialScan = await core.scanner.scan();
   const watcherSupervisor = createWatcherSupervisor({
@@ -40,7 +41,17 @@ async function main() {
     frontendDistPath: path.resolve(process.cwd(), "packages/web/dist"),
     onWarning(message) {
       console.warn(message);
-    }
+    },
+    rootConfigController: createRootConfigController({
+      core,
+      configPath: loadedConfig.sourcePath,
+      browseForRoot: async () =>
+        pickDirectory({
+          onWarning(message) {
+            console.warn(message);
+          }
+        })
+    })
   });
 
   const shutdown = async (signal) => {

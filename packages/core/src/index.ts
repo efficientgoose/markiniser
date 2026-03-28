@@ -8,7 +8,7 @@ import type { FileWatcher } from "./watcher.js";
 import { createFileWatcher } from "./watcher.js";
 import type { FlatFile, MarkiniserConfig, TreeNode } from "./types.js";
 
-export { loadConfig } from "./config.js";
+export { loadConfig, loadConfigWithDetails, writeConfig } from "./config.js";
 export { scanMarkdownFiles } from "./scanner.js";
 export { createSearchIndexer } from "./indexer.js";
 export { createFileAccess } from "./fileAccess.js";
@@ -31,10 +31,11 @@ export interface Core {
   fileAccess: FileAccessManager;
   getTree(): TreeNode[];
   getFiles(): FlatFile[];
+  updateRoots(roots: string[]): Promise<ScanResult>;
 }
 
 export async function createCore(config: MarkiniserConfig): Promise<Core> {
-  const fileAccess = createFileAccess(config.roots);
+  let fileAccess = createFileAccess(config.roots);
   let currentScan = await scanMarkdownFiles(config);
   const indexer = createSearchIndexer(currentScan.files);
 
@@ -59,12 +60,31 @@ export async function createCore(config: MarkiniserConfig): Promise<Core> {
     },
     indexer,
     watcher,
-    fileAccess,
+    get fileAccess() {
+      return fileAccess;
+    },
     getTree() {
       return currentScan.tree;
     },
     getFiles() {
       return currentScan.files;
+    },
+    async updateRoots(roots) {
+      const watcherWasRunning = watcher.isRunning();
+      if (watcherWasRunning) {
+        await watcher.stop();
+      }
+
+      config.roots.splice(0, config.roots.length, ...roots);
+      fileAccess = createFileAccess(config.roots);
+      currentScan = await scanMarkdownFiles(config);
+      indexer.reset(currentScan.files);
+
+      if (watcherWasRunning) {
+        await watcher.start();
+      }
+
+      return currentScan;
     }
   };
 }

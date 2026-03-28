@@ -4,22 +4,26 @@ import type { Core } from "@markiniser/core";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Fastify, { type FastifyInstance } from "fastify";
 import { FRONTEND_DIST_LABEL } from "./constants.js";
-import { registerRoutes } from "./routes.js";
+import { registerRootConfigRoutes, registerRoutes } from "./routes.js";
 export {
   getBrowserOpenCommand,
   openBrowser
 } from "./browser.js";
+export { pickDirectory } from "./directoryPicker.js";
 export {
   createWatcherSupervisor,
   startWatcherInBackground
 } from "./runtime.js";
+export { createRootConfigController } from "./rootConfig.js";
 import { registerStaticHandling } from "./static.js";
 import { registerWebSocket } from "./ws.js";
+import type { RootConfigController } from "./rootConfig.js";
 
 export interface CreateServerOptions {
   core: Core;
   frontendDistPath?: string;
   onWarning?: (message: string) => void;
+  rootConfigController?: RootConfigController;
 }
 
 function isAllowedOrigin(origin: string | undefined): boolean {
@@ -50,6 +54,9 @@ export async function createServer(
 
   await registerWebSocket(app, options.core);
   await registerRoutes(app, options.core);
+  if (options.rootConfigController) {
+    await registerRootConfigRoutes(app, options.rootConfigController);
+  }
   await registerStaticHandling(
     app,
     options.frontendDistPath ?? resolve(process.cwd(), FRONTEND_DIST_LABEL),

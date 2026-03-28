@@ -1,6 +1,7 @@
 import type { Core, FlatFile } from "@markiniser/core";
 import { Type } from "@sinclair/typebox";
 import type { FastifyInstance } from "fastify";
+import type { RootConfigController } from "./rootConfig.js";
 
 function decodePathParam(pathValue: string): string {
   return decodeURIComponent(pathValue);
@@ -162,6 +163,70 @@ export async function registerRoutes(app: FastifyInstance, core: Core): Promise<
         results,
         count: results.length
       };
+    }
+  );
+}
+
+function mapRootConfigError(error: unknown): { statusCode: number; message: string } {
+  if (error instanceof Error) {
+    if (
+      error.message.includes("absolute path") ||
+      error.message.includes("does not exist") ||
+      error.message.includes("directory")
+    ) {
+      return { statusCode: 400, message: error.message };
+    }
+
+    if (
+      error.message.includes("writable config") ||
+      error.message.includes("cannot be updated automatically")
+    ) {
+      return { statusCode: 409, message: error.message };
+    }
+  }
+
+  return { statusCode: 500, message: "Internal server error." };
+}
+
+export async function registerRootConfigRoutes(
+  app: FastifyInstance,
+  rootConfigController: RootConfigController
+): Promise<void> {
+  app.get("/api/config", async () => ({
+    roots: rootConfigController.getRoots()
+  }));
+
+  app.post("/api/config/root/browse", async (_request, reply) => {
+    try {
+      return {
+        path: await rootConfigController.browseForRoot()
+      };
+    } catch (error) {
+      const mappedError = mapRootConfigError(error);
+      return reply.status(mappedError.statusCode).send({
+        error: mappedError.message
+      });
+    }
+  });
+
+  app.put<{ Body: { path: string } }>(
+    "/api/config/root",
+    {
+      schema: {
+        body: Type.Object({
+          path: Type.String()
+        })
+      }
+    },
+    async (request, reply) => {
+      try {
+        return await rootConfigController.setPrimaryRoot(request.body.path);
+      } catch (error) {
+        const mappedError = mapRootConfigError(error);
+        return reply.status(mappedError.statusCode).send({
+          error: mappedError.message
+        });
+      }
     }
   );
 }

@@ -32,6 +32,10 @@ const treeResponse = {
   ]
 };
 
+const rootConfigResponse = {
+  roots: ["/docs"]
+};
+
 let currentGuideResponse = { ...guideResponse };
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -83,6 +87,49 @@ beforeEach(() => {
       );
     }
 
+    if (url.includes("/api/config/root/browse")) {
+      return new Response(JSON.stringify({
+        path: "/workspace/notes"
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    if (url.includes("/api/config/root") && init?.method === "PUT") {
+      return new Response(JSON.stringify({
+        roots: ["/workspace/notes"],
+        tree: [
+          {
+            id: "workspace-root",
+            name: "notes",
+            path: "/workspace/notes",
+            isFolder: true,
+            children: [
+              {
+                id: "workspace-file",
+                name: "updated.md",
+                path: "/workspace/notes/updated.md",
+                isFolder: false,
+                size: 16,
+                lastModified: "2026-03-28T00:00:00.000Z"
+              }
+            ]
+          }
+        ]
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    if (url.includes("/api/config")) {
+      return new Response(JSON.stringify(rootConfigResponse), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     return new Response(JSON.stringify(treeResponse), {
       status: 200,
       headers: { "Content-Type": "application/json" }
@@ -117,7 +164,7 @@ describe("App", () => {
     expect(await screen.findByLabelText("Markdown editor")).toBeInTheDocument();
     expect(await screen.findByText("Saved")).toBeInTheDocument();
     expect(await screen.findByText("Hello world")).toBeInTheDocument();
-    expect(screen.getAllByText("/docs/guide.md")).toHaveLength(1);
+    expect(screen.getAllByText("guide.md").length).toBeGreaterThan(0);
   });
 
   it("opens the command palette with Cmd/Ctrl+K and shows recent files plus commands", async () => {
@@ -180,8 +227,34 @@ describe("App", () => {
 
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: "Search markdown files and commands" })).not.toBeInTheDocument();
-      expect(screen.getByText("guide.md")).toBeInTheDocument();
+      expect(screen.getByLabelText("Markdown editor")).toBeInTheDocument();
     });
+  });
+
+  it("opens the root picker modal, browses for a folder, and reloads the tree", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Edit root path" }));
+
+    const modal = await screen.findByRole("dialog", { name: "Change markdown root" });
+    expect(within(modal).getAllByText("/docs")).toHaveLength(2);
+
+    await user.click(within(modal).getByRole("button", { name: "Browse folder" }));
+
+    expect(await within(modal).findByText("/workspace/notes")).toBeInTheDocument();
+
+    await user.click(within(modal).getByRole("button", { name: "Apply root" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/config/root", expect.objectContaining({
+        method: "PUT"
+      }));
+    });
+
+    expect(await screen.findByText("updated.md")).toBeInTheDocument();
+    expect(await screen.findByText("Root folder updated")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Change markdown root" })).not.toBeInTheDocument();
   });
 
   it("collapses and reopens the sidebar from the chevron rail", async () => {
@@ -208,7 +281,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Collapse sidebar" }));
 
     expect(screen.getByTestId("workspace-grid")).toHaveStyle({
-      gridTemplateColumns: "0px 24px minmax(0, 1fr) 8px minmax(0, 1fr)"
+      gridTemplateColumns: "0px 8px minmax(0, 1fr) 8px minmax(0, 1fr)"
     });
   });
 

@@ -6,12 +6,13 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent
 } from "react";
-import { BookOpen, BriefcaseBusiness, Eye, MousePointerClick, PanelLeft, Search } from "lucide-react";
+import { BookOpen, BriefcaseBusiness, CheckCheck, Eye, MousePointerClick, PanelLeft, Pencil, Search } from "lucide-react";
 import logo from "./assets/Markiniser Logo.png";
 import { CommandPalette } from "./components/CommandPalette";
 import { FileTreeSidebar } from "./components/FileTreeSidebar";
 import { MarkdownEditor } from "./components/MarkdownEditor";
 import { Preview } from "./components/Preview";
+import { RootPickerModal } from "./components/RootPickerModal";
 import { StatusBar } from "./components/StatusBar";
 import {
   AppStoreProvider,
@@ -25,9 +26,10 @@ const SIDEBAR_COLLAPSE_THRESHOLD = 220;
 
 interface AppLayoutProps {
   onOpenPalette(): void;
+  onOpenRootPicker(): void;
 }
 
-function AppLayout({ onOpenPalette }: AppLayoutProps) {
+function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
   const store = useAppStoreApi();
   const fileTree = useAppStore((state) => state.fileTree);
   const currentFile = useAppStore((state) => state.currentFile);
@@ -158,7 +160,7 @@ function AppLayout({ onOpenPalette }: AppLayoutProps) {
   const iconButtonClass =
     "flex h-7 w-7 items-center justify-center rounded-md border border-[color:rgba(255,255,255,0.06)] bg-[color:rgba(49,50,68,0.5)] text-[color:var(--ctp-subtext1)] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition hover:bg-[color:rgba(69,71,90,0.52)] hover:text-[color:var(--ctp-text)]";
   const searchTriggerClass =
-    "flex h-8 w-full min-w-[16rem] max-w-[20rem] items-center gap-3 rounded-lg border border-[color:rgba(255,255,255,0.05)] bg-[color:rgba(49,50,68,0.32)] px-4 text-[13px] text-[color:var(--ctp-subtext0)] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:bg-[color:rgba(49,50,68,0.42)] hover:text-[color:var(--ctp-subtext1)]";
+    "flex h-8 w-full min-w-[13rem] max-w-[16.75rem] items-center gap-3 rounded-lg border border-[color:rgba(255,255,255,0.05)] bg-[color:rgba(49,50,68,0.32)] px-4 text-[13px] text-[color:var(--ctp-subtext0)] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:bg-[color:rgba(49,50,68,0.42)] hover:text-[color:var(--ctp-subtext1)]";
   const headerIconButtonClass =
     "flex h-8 w-10 items-center justify-center rounded-lg border border-[color:rgba(255,255,255,0.05)] bg-[color:rgba(49,50,68,0.32)] text-[color:var(--ctp-subtext0)] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:bg-[color:rgba(49,50,68,0.42)] hover:text-[color:var(--ctp-subtext1)]";
 
@@ -232,16 +234,26 @@ function AppLayout({ onOpenPalette }: AppLayoutProps) {
                     <span>Files</span>
                   </span>
                 </div>
-                <button
-                  type="button"
-                  aria-label="Collapse sidebar"
-                  className={iconButtonClass}
-                  onClick={() => {
-                    store.getState().setSidebarOpen(false);
-                  }}
-                >
-                  <PanelLeft size={14} strokeWidth={2.1} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label="Edit root path"
+                    className={iconButtonClass}
+                    onClick={onOpenRootPicker}
+                  >
+                    <Pencil size={14} strokeWidth={2.1} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Collapse sidebar"
+                    className={iconButtonClass}
+                    onClick={() => {
+                      store.getState().setSidebarOpen(false);
+                    }}
+                  >
+                    <PanelLeft size={14} strokeWidth={2.1} />
+                  </button>
+                </div>
               </div>
 
               <div className="hide-scrollbar min-h-0 flex-1 overflow-auto">
@@ -402,6 +414,29 @@ function AppLayout({ onOpenPalette }: AppLayoutProps) {
 
 export function App() {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [isRootPickerOpen, setIsRootPickerOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isToastVisible, setIsToastVisible] = useState(false);
+
+  useEffect(() => {
+    if (!toastMessage) {
+      return;
+    }
+
+    setIsToastVisible(true);
+
+    const hideId = window.setTimeout(() => {
+      setIsToastVisible(false);
+    }, 3000);
+    const removeId = window.setTimeout(() => {
+      setToastMessage(null);
+    }, 3260);
+
+    return () => {
+      window.clearTimeout(hideId);
+      window.clearTimeout(removeId);
+    };
+  }, [toastMessage]);
 
   return (
     <AppStoreProvider>
@@ -409,11 +444,38 @@ export function App() {
         onOpenPalette={() => {
           setIsPaletteOpen(true);
         }}
+        onOpenRootPicker={() => {
+          setIsRootPickerOpen(true);
+        }}
       />
       <CommandPalette
         open={isPaletteOpen}
         onOpenChange={setIsPaletteOpen}
       />
+      <RootPickerModal
+        open={isRootPickerOpen}
+        onOpenChange={setIsRootPickerOpen}
+        onRootApplied={() => {
+          setIsToastVisible(true);
+          setToastMessage("Root folder updated");
+        }}
+      />
+      {toastMessage ? (
+        <div className="pointer-events-none fixed bottom-6 left-1/2 z-[60] -translate-x-1/2">
+          <div
+            className={`flex items-center gap-3 rounded-xl bg-[color:rgba(24,24,37,0.94)] px-4 py-3 text-sm text-[color:var(--ctp-text)] shadow-[0_20px_50px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.03)] ring-1 ring-[color:rgba(255,255,255,0.04)] backdrop-blur-xl transition-all duration-250 ${
+              isToastVisible
+                ? "translate-y-0 opacity-100"
+                : "translate-y-2 opacity-0"
+            }`}
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[color:rgba(166,227,161,0.14)] text-[color:var(--ctp-green)]">
+              <CheckCheck size={15} strokeWidth={2.25} />
+            </span>
+            <span>{toastMessage}</span>
+          </div>
+        </div>
+      ) : null}
     </AppStoreProvider>
   );
 }

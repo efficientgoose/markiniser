@@ -1,0 +1,170 @@
+.root-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.root-picker-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 51;
+  width: min(560px, calc(100vw - 32px));
+  overflow: hidden;
+  transform: translate(-50%, -50%);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ctp-base) 84%, var(--ctp-mantle) 16%);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.46),
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.root-picker-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+}
+
+.root-picker-title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.root-picker-title-icon {
+  margin-top: 2px;
+  color: var(--ctp-overlay2);
+}
+
+.root-picker-title {
+  color: var(--ctp-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.root-picker-subtitle {
+  margin-top: 4px;
+  color: var(--ctp-subtext0);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.root-picker-escape {
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ctp-surface0) 76%, transparent);
+  padding: 6px 10px;
+  color: var(--ctp-subtext0);
+  font-size: 11px;
+  line-height: 1;
+  text-transform: lowercase;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.root-picker-separator {
+  height: 1px;
+  background: rgba(88, 91, 112, 0.32);
+}
+
+.root-picker-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.root-picker-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.root-picker-label {
+  color: var(--ctp-overlay2);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.root-picker-path-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ctp-surface0) 72%, transparent);
+  padding: 12px 14px;
+  color: var(--ctp-subtext1);
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: break-all;
+}
+
+.root-picker-path-card--selected {
+  color: var(--ctp-text);
+}
+
+.root-picker-path-icon {
+  flex: 0 0 auto;
+  color: var(--ctp-mauve);
+}
+
+.root-picker-error {
+  border-radius: 10px;
+  background: rgba(243, 139, 168, 0.12);
+  padding: 10px 12px;
+  color: var(--ctp-red);
+  font-size: 13px;
+}
+
+.root-picker-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.root-picker-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.root-picker-button {
+  border: 0;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  transition: background 0.12s ease, color 0.12s ease, opacity 0.12s ease;
+}
+
+.root-picker-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.root-picker-button--secondary,
+.root-picker-button--ghost {
+  background: color-mix(in srgb, var(--ctp-surface0) 72%, transparent);
+  color: var(--ctp-text);
+}
+
+.root-picker-button--secondary:hover,
+.root-picker-button--ghost:hover {
+  background: color-mix(in srgb, var(--ctp-surface1) 72%, transparent);
+}
+
+.root-picker-button--primary {
+  background: color-mix(in srgb, var(--ctp-lavender) 18%, var(--ctp-surface0));
+  color: var(--ctp-lavender);
+}
+
+.root-picker-button--primary:hover {
+  background: color-mix(in srgb, var(--ctp-lavender) 24%, var(--ctp-surface0));
+}
