@@ -19,7 +19,7 @@ interface CommandPaletteProps {
 interface PaletteCommand {
   id: string;
   name: string;
-  shortcut: string;
+  shortcut: string[];
   icon: typeof Eye;
   run(): void | Promise<void>;
 }
@@ -156,7 +156,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       {
         id: "toggle-preview",
         name: "Toggle Preview Panel",
-        shortcut: "Cmd+Shift+P",
+        shortcut: ["⌘", "⇧", "P"],
         icon: Eye,
         run: () => {
           store.getState().setPreviewOpen(!store.getState().isPreviewOpen);
@@ -165,7 +165,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       {
         id: "toggle-sidebar",
         name: "Toggle Sidebar",
-        shortcut: "Cmd+B",
+        shortcut: ["⌘", "B"],
         icon: PanelLeft,
         run: () => {
           store.getState().setSidebarOpen(!store.getState().isSidebarOpen);
@@ -174,7 +174,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       {
         id: "refresh-tree",
         name: "Refresh File Tree",
-        shortcut: "R",
+        shortcut: ["R"],
         icon: RefreshCw,
         run: async () => {
           await store.getState().loadTree();
@@ -301,7 +301,16 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                           <div className="command-palette-meta">
                             <div className="command-palette-title">{command.name}</div>
                           </div>
-                          <span className="command-palette-shortcut">{command.shortcut}</span>
+                          <span className="command-palette-shortcut" aria-label={`Shortcut ${command.shortcut.join(" ")}`}>
+                            {command.shortcut.map((part) => (
+                              <span
+                                key={`${command.id}-${part}`}
+                                className="command-palette-shortcut-key"
+                              >
+                                {part}
+                              </span>
+                            ))}
+                          </span>
                         </Command.Item>
                       );
                     })}
