@@ -257,6 +257,7 @@ textarea {
 .markdown-preview ul,
 .markdown-preview ol {
   padding-left: 1.35em;
+  margin-bottom: 0.45em;
 }
 
 .markdown-preview ul {
@@ -272,7 +273,7 @@ textarea {
 }
 
 .markdown-preview li + li {
-  margin-top: 0.2em;
+  margin-top: 0.08em;
 }
 
 .markdown-preview code {
