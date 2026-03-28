@@ -55,9 +55,10 @@ function toMarkdownFilename(name: string): string {
 interface AppLayoutProps {
   onOpenPalette(): void;
   onOpenRootPicker(): void;
+  onShowToast(message: string): void;
 }
 
-function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
+function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutProps) {
   const store = useAppStoreApi();
   const fileTree = useAppStore((state) => state.fileTree);
   const currentFile = useAppStore((state) => state.currentFile);
@@ -295,6 +296,23 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
     boxShadow: "none"
   } as const;
   const canRenameCurrentFile = Boolean(currentFile && !currentFile.isVirtual);
+  const handleManualSave = async () => {
+    const activeFile = store.getState().currentFile;
+    const hasPendingChanges = store.getState().dirtyContent !== null;
+    if (!activeFile || activeFile.isVirtual) {
+      return;
+    }
+
+    if (!hasPendingChanges) {
+      onShowToast("File saved");
+      return;
+    }
+
+    const didSave = await saveNow();
+    if (didSave) {
+      onShowToast("File saved");
+    }
+  };
 
   const submitRename = async () => {
     if (!currentFile || currentFile.isVirtual) {
@@ -646,7 +664,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
                       value={editorContent}
                       onChange={handleEditorChange}
                       onSave={() => {
-                        void saveNow();
+                        void handleManualSave();
                       }}
                       onTogglePreview={togglePreviewPanel}
                       onCursorChange={(position) => {
@@ -761,14 +779,17 @@ export function App() {
 
   return (
     <AppStoreProvider>
-      <AppLayout
-        onOpenPalette={() => {
-          setIsPaletteOpen(true);
-        }}
-        onOpenRootPicker={() => {
-          setIsRootPickerOpen(true);
-        }}
-      />
+        <AppLayout
+          onOpenPalette={() => {
+            setIsPaletteOpen(true);
+          }}
+          onOpenRootPicker={() => {
+            setIsRootPickerOpen(true);
+          }}
+          onShowToast={(message) => {
+            setToastMessage(message);
+          }}
+        />
       <CommandPalette
         open={isPaletteOpen}
         onOpenChange={setIsPaletteOpen}

@@ -471,6 +471,19 @@ describe("App", () => {
     expect(await screen.findByText("Saved")).toBeInTheDocument();
   });
 
+  it("shows a file saved toast on Cmd/Ctrl+S manual save", async () => {
+    render(<App />);
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByText("guide.md"));
+
+    const editor = await screen.findByLabelText("Markdown editor");
+    await user.click(editor);
+    await user.keyboard("{Meta>}s{/Meta}");
+
+    expect(await screen.findByText("File saved")).toBeInTheDocument();
+  });
+
   it("opens an in-memory sample file from the empty state", async () => {
     const user = userEvent.setup();
     render(<App />);

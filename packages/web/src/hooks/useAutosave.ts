@@ -19,7 +19,7 @@ export function useAutosave({
     const activeFile = state.currentFile;
     const contentToSave = state.dirtyContent;
     if (!activeFile || contentToSave === null || activeFile.isVirtual) {
-      return;
+      return false;
     }
 
     state.setSaveStatus("saving");
@@ -48,8 +48,10 @@ export function useAutosave({
           externalFileSnapshot: null
         };
       });
+      return true;
     } catch {
       store.getState().setSaveStatus("error");
+      return false;
     }
   });
 
