@@ -1,6 +1,6 @@
 {
   "roots": [
-    "/Users/macbook/Desktop/Personal Projects/"
+    "/Users/macbook/Desktop"
   ],
   "ignore": [
     "node_modules",
