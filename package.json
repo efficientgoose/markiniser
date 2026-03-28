@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Local-first markdown organizer for browsing, searching, and editing markdown files on localhost.",
+  "bin": {
+    "markiniser": "./bin/markiniser.js"
+  },
   "workspaces": [
     "packages/*"
   ],
@@ -10,6 +13,9 @@
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "dependencies": {
+    "commander": "^14.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
