@@ -82,6 +82,85 @@ textarea {
   display: none;
 }
 
+.markdown-source-editor {
+  height: 100%;
+  min-height: 0;
+}
+
+.markdown-source-editor textarea,
+.markdown-source-editor pre {
+  margin: 0;
+  font-family: var(--font-mono) !important;
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+}
+
+.markdown-source-editor textarea {
+  outline: none;
+  color: var(--ctp-text) !important;
+  caret-color: var(--ctp-lavender);
+  overflow: auto !important;
+}
+
+.markdown-source-editor textarea::selection {
+  background: rgba(180, 190, 254, 0.28);
+}
+
+.markdown-source-editor pre {
+  pointer-events: none;
+  will-change: transform;
+}
+
+.markdown-source-editor .token.title,
+.markdown-source-editor .token.title .token.content {
+  color: var(--ctp-lavender);
+  font-weight: 600;
+}
+
+.markdown-source-editor .token.bold,
+.markdown-source-editor .token.bold .token.content {
+  color: var(--ctp-text);
+  font-weight: 700;
+}
+
+.markdown-source-editor .token.italic,
+.markdown-source-editor .token.italic .token.content {
+  color: var(--ctp-mauve);
+  font-style: italic;
+}
+
+.markdown-source-editor .token.code,
+.markdown-source-editor .token.code-block,
+.markdown-source-editor .token.code-language,
+.markdown-source-editor .token.url,
+.markdown-source-editor .token.url-reference,
+.markdown-source-editor .token.hr,
+.markdown-source-editor .token.list,
+.markdown-source-editor .token.blockquote,
+.markdown-source-editor .token.punctuation {
+  color: var(--ctp-overlay2);
+}
+
+.markdown-source-editor .token.code .token.punctuation,
+.markdown-source-editor .token.code-block,
+.markdown-source-editor .token.code-language,
+.markdown-source-editor .token.code.keyword {
+  color: var(--ctp-mauve);
+}
+
+.markdown-source-editor .token.url,
+.markdown-source-editor .token.url-reference,
+.markdown-source-editor .token.url-reference .token.string {
+  color: var(--ctp-blue);
+}
+
+.markdown-source-editor .token.front-matter-block,
+.markdown-source-editor .token.front-matter,
+.markdown-source-editor .token.yaml,
+.markdown-source-editor .token.language-yaml {
+  color: var(--ctp-subtext0);
+}
+
 .preview-pane {
   scrollbar-width: none;
 }

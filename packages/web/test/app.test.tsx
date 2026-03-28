@@ -164,7 +164,7 @@ describe("App", () => {
 
     expect(await screen.findByLabelText("Markdown editor")).toBeInTheDocument();
     expect(await screen.findByText("Saved")).toBeInTheDocument();
-    expect(await screen.findByText("Hello world")).toBeInTheDocument();
+    expect((await screen.findAllByText("Hello world")).length).toBeGreaterThan(0);
     expect(screen.getAllByText("guide.md").length).toBeGreaterThan(0);
   });
 
@@ -367,7 +367,7 @@ describe("App", () => {
     expect(await screen.findByLabelText("Markdown editor")).toBeInTheDocument();
     expect(await screen.findByText("Markiniser Sample.md")).toBeInTheDocument();
     expect(await screen.findByText("Sample file · local only")).toBeInTheDocument();
-    expect(await screen.findByText("Command Palette")).toBeInTheDocument();
+    expect((await screen.findAllByText("Command Palette")).length).toBeGreaterThan(0);
     expect(screen.getByText("Edit your markdown files with live preview, autosave, and a local-first workflow.")).toBeInTheDocument();
   });
 });

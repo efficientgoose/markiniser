@@ -186,10 +186,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
               </div>
             </div>
           </div>
-          <div
-            className="mx-auto text-sm text-[color:var(--ctp-subtext1)]"
-            style={{ fontFamily: "var(--font-brand)", fontWeight: 300 }}
-          >
+          <div className="mx-auto text-sm font-medium text-[color:var(--ctp-subtext1)]">
             {currentFile?.name ?? ""}
           </div>
           <div className="flex items-center gap-2">
