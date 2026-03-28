@@ -2,8 +2,25 @@ import Editor from "react-simple-code-editor";
 import Prism from "prismjs";
 import "prismjs/components/prism-markup";
 import "prismjs/components/prism-markdown";
-import { useCallback, useEffect, useEffectEvent, useId, useRef } from "react";
+import { type ReactNode } from "react";
+import {
+  type ForwardedRef,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useId,
+  useImperativeHandle,
+  useRef
+} from "react";
 import type { CursorPosition } from "../store/useAppStore";
+import {
+  getScrollTopForSectionPosition,
+  getSectionScrollPosition,
+  measureSections,
+  type SectionScrollPosition
+} from "../lib/scrollSync";
+import { parseMarkdownSections } from "../lib/markdownSections";
 
 export interface MarkdownEditorProps {
   value: string;
@@ -11,24 +28,83 @@ export interface MarkdownEditorProps {
   onSave(): void;
   onTogglePreview(): void;
   onCursorChange(position: CursorPosition): void;
+  onScrollPositionChange?(position: SectionScrollPosition): void;
 }
 
-function highlightMarkdown(value: string) {
-  return Prism.highlight(value, Prism.languages.markdown, "markdown");
+export interface MarkdownEditorHandle {
+  getScrollPosition(): SectionScrollPosition | null;
+  scrollToPosition(position: SectionScrollPosition): void;
 }
 
-export function MarkdownEditor({
+function highlightMarkdown(value: string): ReactNode {
+  const sections = parseMarkdownSections(value);
+
+  return sections.map((section) => (
+    <div
+      key={section.index}
+      data-sync-section-index={section.index}
+      className="editor-sync-section"
+    >
+      <span
+        dangerouslySetInnerHTML={{
+          __html: Prism.highlight(section.text, Prism.languages.markdown, "markdown")
+        }}
+      />
+    </div>
+  ));
+}
+
+function MarkdownEditorInner({
   value,
   onChange,
   onSave,
   onTogglePreview,
-  onCursorChange
-}: MarkdownEditorProps) {
+  onCursorChange,
+  onScrollPositionChange
+}: MarkdownEditorProps, ref: ForwardedRef<MarkdownEditorHandle>) {
   const editorId = useId();
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const scrollFlushFrameRef = useRef<number | null>(null);
+  const suppressReleaseFrameRef = useRef<number | null>(null);
+  const pendingScrollTopRef = useRef<number | null>(null);
+  const suppressScrollSyncRef = useRef(false);
+
+  const getTextarea = useCallback(() => {
+    const textarea = hostRef.current?.querySelector("textarea");
+    return textarea instanceof HTMLTextAreaElement ? textarea : null;
+  }, []);
+
+  const getEditorMetrics = useCallback(() => {
+    const textarea = getTextarea();
+    if (!textarea) {
+      return null;
+    }
+
+    return {
+      textarea
+    };
+  }, [getTextarea]);
+
+  const getSectionElements = useCallback(() => {
+    const host = hostRef.current;
+    if (!host) {
+      return [];
+    }
+
+    return Array.from(host.querySelectorAll<HTMLElement>("[data-sync-section-index]"));
+  }, []);
+
+  const syncHighlightedLayer = useCallback((textarea: HTMLTextAreaElement) => {
+    const pre = hostRef.current?.querySelector("pre");
+    if (!(pre instanceof HTMLElement)) {
+      return;
+    }
+
+    pre.style.transform = `translate(${-textarea.scrollLeft}px, ${-textarea.scrollTop}px)`;
+  }, []);
 
   const updateCursorFromTextarea = useCallback(() => {
-    const textarea = hostRef.current?.querySelector("textarea");
+    const textarea = getTextarea();
     if (!textarea) {
       return;
     }
@@ -40,7 +116,30 @@ export function MarkdownEditor({
       line: lines.length,
       column: currentLine.length + 1
     });
-  }, [onCursorChange]);
+  }, [getTextarea, onCursorChange]);
+
+  const emitScrollPosition = useCallback(() => {
+    if (!onScrollPositionChange) {
+      return;
+    }
+
+    const metrics = getEditorMetrics();
+    if (!metrics) {
+      return;
+    }
+
+    const position = getSectionScrollPosition(
+      metrics.textarea.scrollTop,
+      measureSections(getSectionElements()),
+      Math.max(0, metrics.textarea.scrollHeight - metrics.textarea.offsetHeight)
+    );
+    if (!position) {
+      onScrollPositionChange({ sectionIdx: 0, posInSection: 0 });
+      return;
+    }
+
+    onScrollPositionChange(position);
+  }, [getEditorMetrics, getSectionElements, onScrollPositionChange]);
 
   const handleSave = useEffectEvent(() => {
     onSave();
@@ -49,6 +148,66 @@ export function MarkdownEditor({
   const handleTogglePreview = useEffectEvent(() => {
     onTogglePreview();
   });
+
+  useImperativeHandle(ref, () => ({
+    getScrollPosition() {
+      const metrics = getEditorMetrics();
+      if (!metrics) {
+        return null;
+      }
+
+      return getSectionScrollPosition(
+        metrics.textarea.scrollTop,
+        measureSections(getSectionElements()),
+        Math.max(0, metrics.textarea.scrollHeight - metrics.textarea.offsetHeight)
+      );
+    },
+    scrollToPosition(position: SectionScrollPosition) {
+      const metrics = getEditorMetrics();
+      if (!metrics) {
+        return;
+      }
+
+      const targetScrollTop = getScrollTopForSectionPosition(
+        position,
+        measureSections(getSectionElements()),
+        Math.max(0, metrics.textarea.scrollHeight - metrics.textarea.offsetHeight)
+      );
+
+      pendingScrollTopRef.current = targetScrollTop;
+
+      if (scrollFlushFrameRef.current != null) {
+        return;
+      }
+
+      const flushScroll = () => {
+        scrollFlushFrameRef.current = null;
+        const latestTargetScrollTop = pendingScrollTopRef.current;
+        pendingScrollTopRef.current = null;
+        if (latestTargetScrollTop == null) {
+          return;
+        }
+
+        suppressScrollSyncRef.current = true;
+        metrics.textarea.scrollTop = latestTargetScrollTop;
+        syncHighlightedLayer(metrics.textarea);
+
+        if (suppressReleaseFrameRef.current != null) {
+          cancelAnimationFrame(suppressReleaseFrameRef.current);
+        }
+
+        suppressReleaseFrameRef.current = requestAnimationFrame(() => {
+          suppressScrollSyncRef.current = false;
+          suppressReleaseFrameRef.current = null;
+          if (pendingScrollTopRef.current != null) {
+            scrollFlushFrameRef.current = requestAnimationFrame(flushScroll);
+          }
+        });
+      };
+
+      scrollFlushFrameRef.current = requestAnimationFrame(flushScroll);
+    }
+  }), [getEditorMetrics, getSectionElements, syncHighlightedLayer]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -63,7 +222,10 @@ export function MarkdownEditor({
     }
 
     const syncScroll = () => {
-      pre.style.transform = `translate(${-textarea.scrollLeft}px, ${-textarea.scrollTop}px)`;
+      syncHighlightedLayer(textarea);
+      if (!suppressScrollSyncRef.current) {
+        emitScrollPosition();
+      }
     };
 
     syncScroll();
@@ -72,7 +234,18 @@ export function MarkdownEditor({
     return () => {
       textarea.removeEventListener("scroll", syncScroll);
     };
-  }, [value]);
+  }, [emitScrollPosition, value]);
+
+  useEffect(() => {
+    return () => {
+      if (scrollFlushFrameRef.current != null) {
+        cancelAnimationFrame(scrollFlushFrameRef.current);
+      }
+      if (suppressReleaseFrameRef.current != null) {
+        cancelAnimationFrame(suppressReleaseFrameRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div ref={hostRef} className="h-full min-h-0">
@@ -127,8 +300,11 @@ export function MarkdownEditor({
         }}
         onFocus={() => {
           updateCursorFromTextarea();
+          emitScrollPosition();
         }}
       />
     </div>
   );
 }
+
+export const MarkdownEditor = forwardRef(MarkdownEditorInner);

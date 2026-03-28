@@ -368,6 +368,8 @@ describe("App", () => {
     expect(await screen.findByText("Markiniser Sample.md")).toBeInTheDocument();
     expect(await screen.findByText("Sample file · local only")).toBeInTheDocument();
     expect((await screen.findAllByText("Command Palette")).length).toBeGreaterThan(0);
-    expect(screen.getByText("Edit your markdown files with live preview, autosave, and a local-first workflow.")).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Edit your markdown files with live preview, autosave, and a local-first workflow.").length
+    ).toBeGreaterThan(0);
   });
 });

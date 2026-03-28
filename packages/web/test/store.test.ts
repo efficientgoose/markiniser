@@ -180,4 +180,5 @@ describe("createAppStore", () => {
     expect(store.getState().recentFiles).toEqual(["/docs/guide.md"]);
     expect(store.getState().saveStatus).toBe("saved");
   });
+
 });

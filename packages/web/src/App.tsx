@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useEffectEvent,
   useRef,
@@ -6,12 +7,15 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent
 } from "react";
-import { BookOpen, BriefcaseBusiness, CheckCheck, Eye, MousePointerClick, PanelLeft, Pencil, Search } from "lucide-react";
+import { BookOpen, BriefcaseBusiness, CheckCheck, Eye, EyeOff, MousePointerClick, PanelLeft, Pencil, Search } from "lucide-react";
 import logo from "./assets/Markiniser Logo.png";
 import { CommandPalette } from "./components/CommandPalette";
 import { FileTreeSidebar } from "./components/FileTreeSidebar";
-import { MarkdownEditor } from "./components/MarkdownEditor";
-import { Preview } from "./components/Preview";
+import {
+  MarkdownEditor,
+  type MarkdownEditorHandle
+} from "./components/MarkdownEditor";
+import { Preview, type PreviewHandle } from "./components/Preview";
 import { RootPickerModal } from "./components/RootPickerModal";
 import { StatusBar } from "./components/StatusBar";
 import {
@@ -21,6 +25,7 @@ import {
 } from "./store/useAppStore";
 import { useFileWatcher } from "./hooks/useFileWatcher";
 import { useAutosave } from "./hooks/useAutosave";
+import type { SectionScrollPosition } from "./lib/scrollSync";
 
 const SIDEBAR_COLLAPSE_THRESHOLD = 220;
 
@@ -43,6 +48,10 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
   const sidebarWidth = useAppStore((state) => state.sidebarWidth);
   const previewWidth = useAppStore((state) => state.previewWidth);
   const [activeResizeMode, setActiveResizeMode] = useState<"sidebar" | "preview" | null>(null);
+  const editorRef = useRef<MarkdownEditorHandle | null>(null);
+  const previewRef = useRef<PreviewHandle | null>(null);
+  const syncLockRef = useRef<"editor" | "preview" | null>(null);
+  const syncReleaseFrameRef = useRef<number | null>(null);
 
   useFileWatcher();
   const { saveNow } = useAutosave({
@@ -70,6 +79,62 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
     store.getState().setDirtyContent(nextContent);
     store.getState().setSaveStatus(activeFile.isVirtual ? "saved" : "unsaved");
   });
+
+  const releaseSyncLock = useCallback((source: "editor" | "preview") => {
+    if (syncReleaseFrameRef.current != null) {
+      cancelAnimationFrame(syncReleaseFrameRef.current);
+    }
+
+    syncReleaseFrameRef.current = requestAnimationFrame(() => {
+      if (syncLockRef.current === source) {
+        syncLockRef.current = null;
+      }
+    });
+  }, []);
+
+  const alignPreviewToEditor = useCallback(() => {
+    if (!isPreviewOpen) {
+      return;
+    }
+
+    const editor = editorRef.current;
+    const preview = previewRef.current;
+    if (!editor || !preview) {
+      return;
+    }
+
+    const position = editor.getScrollPosition();
+    if (!position) {
+      return;
+    }
+
+    syncLockRef.current = "editor";
+    preview.scrollToPosition(position);
+    releaseSyncLock("editor");
+  }, [isPreviewOpen, releaseSyncLock]);
+  const editorContent = dirtyContent ?? currentFile?.content ?? "";
+
+  useEffect(() => {
+    return () => {
+      if (syncReleaseFrameRef.current != null) {
+        cancelAnimationFrame(syncReleaseFrameRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isPreviewOpen) {
+      return;
+    }
+
+    const frameId = requestAnimationFrame(() => {
+      alignPreviewToEditor();
+    });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
+  }, [alignPreviewToEditor, currentFile?.path, editorContent, isPreviewOpen]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -146,7 +211,26 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
         }`,
     transition: activeResizeMode ? "none" : "grid-template-columns 220ms ease"
   };
-  const editorContent = dirtyContent ?? currentFile?.content ?? "";
+
+  const handleEditorScrollPositionChange = useEffectEvent((position: SectionScrollPosition) => {
+    if (!isPreviewOpen || syncLockRef.current === "preview") {
+      return;
+    }
+
+    syncLockRef.current = "editor";
+    previewRef.current?.scrollToPosition(position);
+    releaseSyncLock("editor");
+  });
+
+  const handlePreviewScrollPositionChange = useEffectEvent((position: SectionScrollPosition) => {
+    if (!isPreviewOpen || syncLockRef.current === "editor") {
+      return;
+    }
+
+    syncLockRef.current = "preview";
+    editorRef.current?.scrollToPosition(position);
+    releaseSyncLock("preview");
+  });
   const startResize = (
     event: ReactPointerEvent<HTMLDivElement> | ReactMouseEvent<HTMLDivElement>,
     mode: "sidebar" | "preview"
@@ -213,7 +297,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
                 store.getState().setPreviewOpen(!isPreviewOpen);
               }}
             >
-              <Eye size={16} />
+              {isPreviewOpen ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
         </div>
@@ -336,6 +420,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
                 <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-[color:var(--ctp-base)]">
                   <div className="min-h-0 flex-1">
                     <MarkdownEditor
+                      ref={editorRef}
                       value={editorContent}
                       onChange={handleEditorChange}
                       onSave={() => {
@@ -347,6 +432,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
                       onCursorChange={(position) => {
                         store.getState().setCursorPosition(position);
                       }}
+                      onScrollPositionChange={handleEditorScrollPositionChange}
                     />
                   </div>
                 </div>
@@ -400,7 +486,11 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
             />
             <aside className="overflow-hidden border-l border-[color:rgba(255,255,255,0.05)] bg-[color:var(--ctp-mantle)]">
               {currentFile ? (
-                <Preview content={editorContent} />
+                <Preview
+                  ref={previewRef}
+                  content={editorContent}
+                  onScrollPositionChange={handlePreviewScrollPositionChange}
+                />
               ) : (
                 <div className="flex h-full items-center justify-center px-4 py-6">
                   <div className="flex w-full max-w-xs flex-col items-center rounded-2xl border border-dashed border-[color:rgba(88,91,112,0.3)] bg-[color:rgba(49,50,68,0.42)] px-6 py-8 text-center text-sm text-[color:var(--ctp-subtext0)]">
