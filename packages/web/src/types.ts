@@ -38,6 +38,14 @@ export interface SaveFileResponse {
   lastModified: string;
 }
 
+export interface RenameFileResponse {
+  path: string;
+  name: string;
+  size: number;
+  lastModified: string;
+  tree: TreeNode[];
+}
+
 export interface WatcherMessage {
   event: "file-added" | "file-changed" | "file-removed";
   path: string;

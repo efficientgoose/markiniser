@@ -37,12 +37,54 @@ const rootConfigResponse = {
 };
 
 let currentGuideResponse = { ...guideResponse };
+let currentTreeResponse = structuredClone(treeResponse);
 let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   currentGuideResponse = { ...guideResponse };
+  currentTreeResponse = structuredClone(treeResponse);
   fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
+    if (url.includes("/api/files/rename/%2Fdocs%2Fguide.md") && init?.method === "PATCH") {
+      const body = JSON.parse(String(init.body)) as { name: string };
+      currentGuideResponse = {
+        ...currentGuideResponse,
+        path: `/docs/${body.name}`,
+        name: body.name
+      };
+      currentTreeResponse = {
+        tree: [
+          {
+            id: "root",
+            name: "docs",
+            path: "/docs",
+            isFolder: true,
+            children: [
+              {
+                id: "guide-renamed",
+                name: body.name,
+                path: `/docs/${body.name}`,
+                isFolder: false,
+                size: currentGuideResponse.size,
+                lastModified: currentGuideResponse.lastModified
+              }
+            ]
+          }
+        ]
+      };
+
+      return new Response(JSON.stringify({
+        path: currentGuideResponse.path,
+        name: currentGuideResponse.name,
+        size: currentGuideResponse.size,
+        lastModified: currentGuideResponse.lastModified,
+        tree: currentTreeResponse.tree
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     if (url.includes("/api/files/%2Fdocs%2Fguide.md") && init?.method === "PUT") {
       const body = JSON.parse(String(init.body)) as { content: string };
       currentGuideResponse = {
@@ -61,6 +103,13 @@ beforeEach(() => {
     }
 
     if (url.includes("/api/files/%2Fdocs%2Fguide.md")) {
+      return new Response(JSON.stringify(currentGuideResponse), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    if (url.includes(`/api/files/${encodeURIComponent(currentGuideResponse.path)}`)) {
       return new Response(JSON.stringify(currentGuideResponse), {
         status: 200,
         headers: { "Content-Type": "application/json" }
@@ -130,7 +179,7 @@ beforeEach(() => {
       });
     }
 
-    return new Response(JSON.stringify(treeResponse), {
+    return new Response(JSON.stringify(currentTreeResponse), {
       status: 200,
       headers: { "Content-Type": "application/json" }
     });
@@ -166,6 +215,34 @@ describe("App", () => {
     expect(await screen.findByText("Saved")).toBeInTheDocument();
     expect((await screen.findAllByText("Hello world")).length).toBeGreaterThan(0);
     expect(screen.getAllByText("guide.md").length).toBeGreaterThan(0);
+  });
+
+  it("renames the active file from the header and refreshes the tree", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByText("guide.md"));
+
+    await user.click(within(screen.getByRole("banner")).getByText("guide.md"));
+
+    const input = await screen.findByLabelText("Rename file input");
+    expect(input).toHaveValue("guide");
+
+    await user.clear(input);
+    await user.type(input, "renamed-guide");
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/files/rename/%2Fdocs%2Fguide.md",
+        expect.objectContaining({
+          method: "PATCH"
+        })
+      );
+    });
+
+    expect((await screen.findAllByText("renamed-guide.md")).length).toBeGreaterThan(0);
+    expect(screen.queryByText("guide.md")).not.toBeInTheDocument();
   });
 
   it("switches between preview-only and editor-only modes from the pane controls", async () => {

@@ -18,6 +18,7 @@ import {
 import { Preview, type PreviewHandle } from "./components/Preview";
 import { RootPickerModal } from "./components/RootPickerModal";
 import { StatusBar } from "./components/StatusBar";
+import { renameFile } from "./lib/api";
 import {
   AppStoreProvider,
   useAppStore,
@@ -28,6 +29,28 @@ import { useAutosave } from "./hooks/useAutosave";
 import type { SectionScrollPosition } from "./lib/scrollSync";
 
 const SIDEBAR_COLLAPSE_THRESHOLD = 220;
+const MARKDOWN_EXTENSION = ".md";
+
+function getEditableFilename(name: string | undefined): string {
+  if (!name) {
+    return "";
+  }
+
+  return name.toLowerCase().endsWith(MARKDOWN_EXTENSION)
+    ? name.slice(0, -MARKDOWN_EXTENSION.length)
+    : name;
+}
+
+function toMarkdownFilename(name: string): string {
+  const trimmedName = name.trim();
+  if (!trimmedName) {
+    return "";
+  }
+
+  return trimmedName.toLowerCase().endsWith(MARKDOWN_EXTENSION)
+    ? trimmedName
+    : `${trimmedName}${MARKDOWN_EXTENSION}`;
+}
 
 interface AppLayoutProps {
   onOpenPalette(): void;
@@ -49,6 +72,10 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
   const previewWidth = useAppStore((state) => state.previewWidth);
   const [activeResizeMode, setActiveResizeMode] = useState<"sidebar" | "preview" | null>(null);
   const [isPreviewMaximized, setIsPreviewMaximized] = useState(false);
+  const [isRenameMode, setIsRenameMode] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [isRenameSaving, setIsRenameSaving] = useState(false);
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
   const previewRef = useRef<PreviewHandle | null>(null);
   const syncLockRef = useRef<"editor" | "preview" | null>(null);
@@ -145,6 +172,13 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
       setIsPreviewMaximized(false);
     }
   }, [isPreviewMaximized, isPreviewOpen]);
+
+  useEffect(() => {
+    setIsRenameMode(false);
+    setRenameError(null);
+    setIsRenameSaving(false);
+    setRenameValue(getEditableFilename(currentFile?.name));
+  }, [currentFile?.path, currentFile?.name]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -254,13 +288,38 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
   const searchTriggerClass =
     "flex h-8 w-full min-w-[13rem] max-w-[16.75rem] items-center gap-3 rounded-lg border border-[color:rgba(255,255,255,0.05)] bg-[color:rgba(49,50,68,0.32)] px-4 text-[13px] text-[color:var(--ctp-subtext0)] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:bg-[color:rgba(49,50,68,0.42)] hover:text-[color:var(--ctp-subtext1)]";
   const panelModeButtonClass =
-    "flex h-8 w-10 items-center justify-center rounded-lg border border-[color:rgba(255,255,255,0.05)] bg-[color:rgba(49,50,68,0.32)] text-[color:var(--ctp-subtext0)] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:bg-[color:rgba(49,50,68,0.42)] hover:text-[color:var(--ctp-subtext1)]";
+    "flex h-8 w-10 items-center justify-center rounded-lg bg-[color:var(--ctp-surface0)] text-[color:var(--ctp-subtext0)] transition hover:bg-[color:var(--ctp-surface1)] hover:text-[color:var(--ctp-subtext1)]";
   const activePanelModeButtonStyle = {
-    backgroundColor: "rgba(166, 130, 214, 0.5)",
-    borderColor: "rgba(166, 130, 214, 0.55)",
+    backgroundColor: "rgb(147, 118, 193)",
     color: "var(--ctp-crust)",
-    boxShadow: "0 0 0 1px rgba(166, 130, 214, 0.18)"
+    boxShadow: "none"
   } as const;
+  const canRenameCurrentFile = Boolean(currentFile && !currentFile.isVirtual);
+
+  const submitRename = async () => {
+    if (!currentFile || currentFile.isVirtual) {
+      return;
+    }
+
+    const nextName = toMarkdownFilename(renameValue);
+    if (!nextName) {
+      setRenameError("Filename cannot be empty.");
+      return;
+    }
+
+    setIsRenameSaving(true);
+    setRenameError(null);
+
+    try {
+      const response = await renameFile(currentFile.path, nextName);
+      store.getState().applyFileRename(response);
+      setIsRenameMode(false);
+    } catch (error) {
+      setRenameError(error instanceof Error ? error.message : "Unable to rename file.");
+    } finally {
+      setIsRenameSaving(false);
+    }
+  };
 
   const toggleEditorFocus = () => {
     if (isEditorOnly) {
@@ -321,8 +380,72 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
               </div>
             </div>
           </div>
-          <div className="mx-auto text-sm font-medium text-[color:var(--ctp-subtext1)]">
-            {currentFile?.name ?? ""}
+          <div className="mx-auto flex min-w-0 items-center gap-2 text-sm font-medium text-[color:var(--ctp-subtext1)]">
+            {isRenameMode && canRenameCurrentFile ? (
+              <div className="flex min-w-0 items-center">
+                <input
+                  aria-label="Rename file input"
+                  type="text"
+                  autoFocus
+                  value={renameValue}
+                  onChange={(event) => {
+                    setRenameValue(event.target.value);
+                    if (renameError) {
+                      setRenameError(null);
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void submitRename();
+                    }
+
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      setIsRenameMode(false);
+                      setRenameError(null);
+                      setRenameValue(getEditableFilename(currentFile?.name));
+                    }
+                  }}
+                  onBlur={() => {
+                    setIsRenameMode(false);
+                    setRenameError(null);
+                    setRenameValue(getEditableFilename(currentFile?.name));
+                  }}
+                  className="w-[12rem] rounded-l-md bg-[color:var(--ctp-surface0)] px-3 py-1.5 text-center text-sm text-[color:var(--ctp-text)] outline-none ring-0"
+                />
+                <span className="rounded-r-md bg-[color:var(--ctp-surface0)] px-3 py-1.5 text-sm text-[color:var(--ctp-subtext0)]">
+                  .md
+                </span>
+              </div>
+            ) : (
+              <>
+                <span
+                  className={
+                    canRenameCurrentFile
+                      ? "truncate cursor-pointer rounded-md px-2 py-1 transition hover:bg-[color:rgba(69,71,90,0.42)]"
+                      : "truncate"
+                  }
+                  onClick={() => {
+                    if (!canRenameCurrentFile) {
+                      return;
+                    }
+
+                    setRenameValue(getEditableFilename(currentFile?.name));
+                    setRenameError(null);
+                    setIsRenameMode(true);
+                  }}
+                >
+                  {currentFile?.name ?? ""}
+                </span>
+                {canRenameCurrentFile ? (
+                  <span className="sr-only">Click filename to rename</span>
+                ) : null}
+              </>
+            )}
+          </div>
+          <div className="min-w-[12rem] text-right text-xs text-[color:var(--ctp-red)]">
+            {renameError ?? ""}
           </div>
           <div className="flex items-center gap-2">
             <button

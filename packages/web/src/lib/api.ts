@@ -2,6 +2,7 @@ import type {
   BrowseRootResponse,
   CurrentFile,
   FileTreeResponse,
+  RenameFileResponse,
   RootConfigResponse,
   SaveFileResponse,
   SearchResponse,
@@ -53,6 +54,21 @@ export async function saveFile(
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ content })
+    })
+  );
+}
+
+export async function renameFile(
+  path: string,
+  name: string
+): Promise<RenameFileResponse> {
+  return parseJsonResponse<RenameFileResponse>(
+    await fetch(`/api/files/rename/${encodeURIComponent(path)}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ name })
     })
   );
 }

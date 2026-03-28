@@ -4,7 +4,7 @@ import { createStore, type StoreApi } from "zustand/vanilla";
 import { useStore } from "zustand";
 import { fetchFile, fetchFileTree } from "../lib/api";
 import { createSampleFile } from "../lib/sampleFile";
-import type { CurrentFile } from "../types";
+import type { CurrentFile, RenameFileResponse } from "../types";
 
 export interface CursorPosition {
   line: number;
@@ -33,6 +33,7 @@ export interface AppStoreState {
   openFile(fileOrPath: CurrentFile | string): Promise<void>;
   openSampleFile(): void;
   applyRootUpdate(rootPath: string, tree: TreeNode[]): void;
+  applyFileRename(rename: RenameFileResponse): void;
   setDirtyContent(content: string | null): void;
   setSaveStatus(status: AppStoreState["saveStatus"]): void;
   setPreviewOpen(isOpen: boolean): void;
@@ -127,6 +128,29 @@ export function createAppStore(): AppStore {
         externalChangeNotice: fileStillInsideRoot ? get().externalChangeNotice : null,
         externalFileSnapshot: fileStillInsideRoot ? get().externalFileSnapshot : null,
         cursorPosition: fileStillInsideRoot ? get().cursorPosition : null
+      });
+    },
+    applyFileRename(rename) {
+      const currentFile = get().currentFile;
+      const previousPath = currentFile?.path;
+
+      set({
+        fileTree: rename.tree,
+        currentFile: currentFile
+          ? {
+              ...currentFile,
+              path: rename.path,
+              name: rename.name,
+              size: rename.size,
+              lastModified: rename.lastModified
+            }
+          : currentFile,
+        recentFiles: previousPath
+          ? [
+              rename.path,
+              ...get().recentFiles.filter((path) => path !== previousPath && path !== rename.path)
+            ].slice(0, 3)
+          : get().recentFiles
       });
     },
     setDirtyContent(content) {

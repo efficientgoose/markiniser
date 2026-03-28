@@ -91,6 +91,70 @@ describe("createServer", () => {
     await server.close();
   });
 
+  it("renames a markdown file and returns updated metadata plus refreshed tree", async () => {
+    const root = await makeTempDir("markiniser-server-rename-");
+    const filePath = await writeMarkdownFile(root, "docs/guide.md", "# Guide\n\nhello search");
+
+    const core = await createCore({
+      roots: [root],
+      ignore: [".git"],
+      port: 4128
+    });
+    const server = await createServer({
+      core,
+      frontendDistPath: join(root, "missing-dist")
+    });
+
+    await server.ready();
+
+    const renameResponse = await server.inject({
+      method: "PATCH",
+      url: `/api/files/rename/${encodeURIComponent(filePath)}`,
+      payload: {
+        name: "renamed-guide.md"
+      }
+    });
+
+    expect(renameResponse.statusCode).toBe(200);
+    expect(renameResponse.json()).toMatchObject({
+      path: join(root, "docs", "renamed-guide.md"),
+      name: "renamed-guide.md",
+      tree: [
+        {
+          children: [
+            {
+              children: [
+                {
+                  name: "renamed-guide.md",
+                  path: join(root, "docs", "renamed-guide.md")
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    });
+
+    const readRenamedResponse = await server.inject({
+      method: "GET",
+      url: `/api/files/${encodeURIComponent(join(root, "docs", "renamed-guide.md"))}`
+    });
+    expect(readRenamedResponse.statusCode).toBe(200);
+    expect(readRenamedResponse.json()).toMatchObject({
+      path: join(root, "docs", "renamed-guide.md"),
+      name: "renamed-guide.md",
+      content: "# Guide\n\nhello search"
+    });
+
+    const readOldResponse = await server.inject({
+      method: "GET",
+      url: `/api/files/${encodeURIComponent(filePath)}`
+    });
+    expect(readOldResponse.statusCode).toBe(404);
+
+    await server.close();
+  });
+
   it("maps file access errors to 400, 403, and 404 responses", async () => {
     const root = await makeTempDir("markiniser-server-errors-");
     const outsideRoot = await makeTempDir("markiniser-server-outside-");

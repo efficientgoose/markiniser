@@ -15,6 +15,9 @@ function mapFileAccessError(error: unknown): { statusCode: number; message: stri
     if (error.message.includes("markdown")) {
       return { statusCode: 400, message: error.message };
     }
+    if (error.message.includes("Filename") || error.message.includes("already exists")) {
+      return { statusCode: 400, message: error.message };
+    }
   }
 
   if (typeof error === "object" && error !== null && "code" in error) {
@@ -107,6 +110,40 @@ export async function registerRoutes(app: FastifyInstance, core: Core): Promise<
         return {
           success: true,
           lastModified: metadata.lastModified
+        };
+      } catch (error) {
+        const mappedError = mapFileAccessError(error);
+        return reply.status(mappedError.statusCode).send({
+          error: mappedError.message
+        });
+      }
+    }
+  );
+
+  app.patch<{ Params: { "*": string }; Body: { name: string } }>(
+    "/api/files/rename/*",
+    {
+      schema: {
+        body: Type.Object({
+          name: Type.String()
+        })
+      }
+    },
+    async (request, reply) => {
+      const filePath = getWildcardPath(request.params);
+
+      try {
+        const nextPath = await core.fileAccess.rename(filePath, request.body.name);
+        const metadata = await core.fileAccess.getMetadata(nextPath);
+        await core.scanner.scan();
+        core.indexer.reset(core.getFiles());
+
+        return {
+          path: metadata.path,
+          name: metadata.name,
+          size: metadata.size,
+          lastModified: metadata.lastModified,
+          tree: core.getTree()
         };
       } catch (error) {
         const mappedError = mapFileAccessError(error);
