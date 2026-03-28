@@ -53,7 +53,8 @@ function PreviewInner(
     const position = getSectionScrollPosition(
       surfaceRef.current.scrollTop,
       sectionMetrics,
-      Math.max(0, surfaceRef.current.scrollHeight - surfaceRef.current.offsetHeight)
+      Math.max(0, surfaceRef.current.scrollHeight - surfaceRef.current.offsetHeight),
+      surfaceRef.current.offsetHeight
     );
     if (!position) {
       onScrollPositionChange({ sectionIdx: 0, posInSection: 0 });
@@ -79,7 +80,8 @@ function PreviewInner(
       const targetScrollTop = getScrollTopForSectionPosition(
         position,
         sectionMetrics,
-        Math.max(0, surface.scrollHeight - surface.offsetHeight)
+        Math.max(0, surface.scrollHeight - surface.offsetHeight),
+        surface.offsetHeight
       );
 
       pendingScrollTopRef.current = targetScrollTop;

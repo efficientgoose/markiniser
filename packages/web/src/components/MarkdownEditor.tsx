@@ -131,7 +131,8 @@ function MarkdownEditorInner({
     const position = getSectionScrollPosition(
       metrics.textarea.scrollTop,
       measureSections(getSectionElements()),
-      Math.max(0, metrics.textarea.scrollHeight - metrics.textarea.offsetHeight)
+      Math.max(0, metrics.textarea.scrollHeight - metrics.textarea.offsetHeight),
+      metrics.textarea.offsetHeight
     );
     if (!position) {
       onScrollPositionChange({ sectionIdx: 0, posInSection: 0 });
@@ -159,7 +160,8 @@ function MarkdownEditorInner({
       return getSectionScrollPosition(
         metrics.textarea.scrollTop,
         measureSections(getSectionElements()),
-        Math.max(0, metrics.textarea.scrollHeight - metrics.textarea.offsetHeight)
+        Math.max(0, metrics.textarea.scrollHeight - metrics.textarea.offsetHeight),
+        metrics.textarea.offsetHeight
       );
     },
     scrollToPosition(position: SectionScrollPosition) {
@@ -171,7 +173,8 @@ function MarkdownEditorInner({
       const targetScrollTop = getScrollTopForSectionPosition(
         position,
         measureSections(getSectionElements()),
-        Math.max(0, metrics.textarea.scrollHeight - metrics.textarea.offsetHeight)
+        Math.max(0, metrics.textarea.scrollHeight - metrics.textarea.offsetHeight),
+        metrics.textarea.offsetHeight
       );
 
       pendingScrollTopRef.current = targetScrollTop;

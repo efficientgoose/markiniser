@@ -7,9 +7,11 @@ export interface MarkdownSection {
   text: string;
 }
 
-const sectionParser = new MarkdownIt("zero");
-sectionParser.core.ruler.enable([], true);
-sectionParser.block.ruler.enable([], true);
+const sectionParser = new MarkdownIt({
+  html: false,
+  linkify: true,
+  breaks: true
+});
 
 const startSectionBlockTypeMap = new Set([
   "paragraph_open",

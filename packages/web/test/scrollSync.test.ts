@@ -50,4 +50,18 @@ describe("scrollSync helpers", () => {
     expect(getScrollTopForSectionPosition({ sectionIdx: 0, posInSection: 0.5 }, sections, 400)).toBe(50);
     expect(getScrollTopForSectionPosition({ sectionIdx: 1, posInSection: 0.5 }, sections, 400)).toBe(200);
   });
+
+  it("round-trips a viewport-anchored position without drifting", () => {
+    const sections = [
+      { index: 0, startOffset: 0, height: 140, endOffset: 140 },
+      { index: 1, startOffset: 140, height: 260, endOffset: 400 }
+    ];
+
+    const position = getSectionScrollPosition(120, sections, 300, 100);
+
+    expect(position).toEqual({ sectionIdx: 1, posInSection: 15 / 260 });
+    expect(
+      getScrollTopForSectionPosition(position!, sections, 300, 100)
+    ).toBeCloseTo(120, 6);
+  });
 });

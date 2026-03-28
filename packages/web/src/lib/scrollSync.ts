@@ -10,6 +10,8 @@ export interface SectionScrollPosition {
   posInSection: number;
 }
 
+const DEFAULT_ANCHOR_RATIO = 0.35;
+
 export function measureSections(elements: HTMLElement[]): MeasuredSection[] {
   return elements.map((element, index) => {
     const startOffset = element.offsetTop;
@@ -26,13 +28,18 @@ export function measureSections(elements: HTMLElement[]): MeasuredSection[] {
 export function getSectionScrollPosition(
   scrollTop: number,
   sections: MeasuredSection[],
-  maxScrollTop = Number.POSITIVE_INFINITY
+  maxScrollTop = Number.POSITIVE_INFINITY,
+  viewportHeight = 0,
+  anchorRatio = DEFAULT_ANCHOR_RATIO
 ): SectionScrollPosition | null {
   if (sections.length === 0) {
     return null;
   }
 
-  if (scrollTop >= maxScrollTop) {
+  const anchorOffset = viewportHeight * anchorRatio;
+  const anchoredScrollTop = Math.min(maxScrollTop, scrollTop + anchorOffset);
+
+  if (anchoredScrollTop >= maxScrollTop) {
     const lastSection = sections.at(-1);
     if (!lastSection) {
       return null;
@@ -46,7 +53,7 @@ export function getSectionScrollPosition(
 
   let target = sections[0];
   for (const section of sections) {
-    if (scrollTop > section.endOffset) {
+    if (anchoredScrollTop > section.endOffset) {
       continue;
     }
     target = section;
@@ -55,25 +62,31 @@ export function getSectionScrollPosition(
 
   return {
     sectionIdx: target.index,
-    posInSection: Math.max(0, Math.min(1, (scrollTop - target.startOffset) / (target.height || 1)))
+    posInSection: Math.max(0, Math.min(1, (anchoredScrollTop - target.startOffset) / (target.height || 1)))
   };
 }
 
 export function getScrollTopForSectionPosition(
   position: SectionScrollPosition,
   sections: MeasuredSection[],
-  maxScrollTop: number
+  maxScrollTop: number,
+  viewportHeight = 0,
+  anchorRatio = DEFAULT_ANCHOR_RATIO
 ) {
   const section = sections[position.sectionIdx];
   if (!section) {
     return 0;
   }
 
+  const anchorOffset = viewportHeight * anchorRatio;
+  const anchoredScrollTop =
+    section.startOffset + section.height * Math.max(0, Math.min(1, position.posInSection));
+
   return Math.max(
     0,
     Math.min(
       maxScrollTop,
-      section.startOffset + section.height * Math.max(0, Math.min(1, position.posInSection))
+      anchoredScrollTop - anchorOffset
     )
   );
 }
