@@ -159,6 +159,8 @@ function AppLayout({ onOpenPalette }: AppLayoutProps) {
     "flex h-7 w-7 items-center justify-center rounded-md border border-[color:rgba(255,255,255,0.06)] bg-[color:rgba(49,50,68,0.5)] text-[color:var(--ctp-subtext1)] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition hover:bg-[color:rgba(69,71,90,0.52)] hover:text-[color:var(--ctp-text)]";
   const searchTriggerClass =
     "flex h-8 w-full min-w-[16rem] max-w-[20rem] items-center gap-3 rounded-lg border border-[color:rgba(255,255,255,0.05)] bg-[color:rgba(49,50,68,0.32)] px-4 text-[13px] text-[color:var(--ctp-subtext0)] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:bg-[color:rgba(49,50,68,0.42)] hover:text-[color:var(--ctp-subtext1)]";
+  const headerIconButtonClass =
+    "flex h-8 w-10 items-center justify-center rounded-lg border border-[color:rgba(255,255,255,0.05)] bg-[color:rgba(49,50,68,0.32)] text-[color:var(--ctp-subtext0)] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:bg-[color:rgba(49,50,68,0.42)] hover:text-[color:var(--ctp-subtext1)]";
 
   return (
     <div data-testid="app-shell" className="theme-mocha font-[var(--font-sans)]">
@@ -204,7 +206,7 @@ function AppLayout({ onOpenPalette }: AppLayoutProps) {
             <button
               type="button"
               aria-label="Toggle preview"
-              className={chromeButtonClass}
+              className={headerIconButtonClass}
               onClick={() => {
                 store.getState().setPreviewOpen(!isPreviewOpen);
               }}
@@ -225,8 +227,8 @@ function AppLayout({ onOpenPalette }: AppLayoutProps) {
             <div className="flex h-full flex-col gap-2">
               <div className="flex items-center justify-between text-xs text-[color:var(--ctp-subtext0)]">
                 <div className="flex items-center">
-                  <span className="flex items-center gap-1.5">
-                    <BriefcaseBusiness size={13} className="text-[color:var(--ctp-overlay2)]" />
+                  <span className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--ctp-subtext1)]">
+                    <BriefcaseBusiness size={14} strokeWidth={2} className="text-[color:var(--ctp-overlay2)]" />
                     <span>Files</span>
                   </span>
                 </div>
