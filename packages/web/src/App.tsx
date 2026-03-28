@@ -186,7 +186,10 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
               </div>
             </div>
           </div>
-          <div className="mx-auto text-sm text-[color:var(--ctp-subtext1)]">
+          <div
+            className="mx-auto text-sm text-[color:var(--ctp-subtext1)]"
+            style={{ fontFamily: "var(--font-brand)", fontWeight: 300 }}
+          >
             {currentFile?.name ?? ""}
           </div>
           <div className="flex items-center gap-2">
@@ -332,8 +335,8 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
 
           {currentFile ? (
             <>
-              <div className="min-h-0 flex-1 px-4 py-4">
-                <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-[color:var(--ctp-surface2)] bg-[color:var(--ctp-base)]">
+              <div className="min-h-0 flex-1 p-2">
+                <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-[color:var(--ctp-base)]">
                   <div className="min-h-0 flex-1">
                     <MarkdownEditor
                       value={editorContent}
@@ -398,8 +401,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
                 startResize(event, "preview");
               }}
             />
-            <aside className="overflow-hidden border-l border-[color:rgba(255,255,255,0.05)] bg-[color:var(--ctp-mantle)] px-3 py-3">
-              <div className="mb-2 h-0" />
+            <aside className="overflow-hidden border-l border-[color:rgba(255,255,255,0.05)] bg-[color:var(--ctp-mantle)]">
               {currentFile ? (
                 <Preview content={editorContent} />
               ) : (

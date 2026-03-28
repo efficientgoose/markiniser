@@ -138,6 +138,36 @@ describe("createServer", () => {
     await server.close();
   });
 
+  it("serves encoded absolute file paths correctly when the root path contains spaces", async () => {
+    const root = await makeTempDir("markiniser server spaced root ");
+    const filePath = await writeMarkdownFile(root, "docs/plans/guide.md", "# Guide\n\nwith spaces");
+
+    const core = await createCore({
+      roots: [root],
+      ignore: [".git"],
+      port: 4127
+    });
+    const server = await createServer({
+      core,
+      frontendDistPath: join(root, "missing-dist")
+    });
+
+    await server.ready();
+
+    const readResponse = await server.inject({
+      method: "GET",
+      url: `/api/files/${encodeURIComponent(filePath)}`
+    });
+
+    expect(readResponse.statusCode).toBe(200);
+    expect(readResponse.json()).toMatchObject({
+      path: filePath,
+      name: "guide.md"
+    });
+
+    await server.close();
+  });
+
   it("returns empty search results for blank queries", async () => {
     const root = await makeTempDir("markiniser-server-search-");
     await writeMarkdownFile(root, "docs/guide.md", "# Guide");

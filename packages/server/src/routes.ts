@@ -3,8 +3,8 @@ import { Type } from "@sinclair/typebox";
 import type { FastifyInstance } from "fastify";
 import type { RootConfigController } from "./rootConfig.js";
 
-function decodePathParam(pathValue: string): string {
-  return decodeURIComponent(pathValue);
+function getWildcardPath(params: { "*": string }): string {
+  return params["*"];
 }
 
 function mapFileAccessError(error: unknown): { statusCode: number; message: string } {
@@ -53,17 +53,10 @@ export async function registerRoutes(app: FastifyInstance, core: Core): Promise<
     })
   );
 
-  app.get<{ Params: { path: string } }>(
-    "/api/files/:path",
-    {
-      schema: {
-        params: Type.Object({
-          path: Type.String()
-        })
-      }
-    },
+  app.get<{ Params: { "*": string } }>(
+    "/api/files/*",
     async (request, reply) => {
-      const filePath = decodePathParam(request.params.path);
+      const filePath = getWildcardPath(request.params);
 
       try {
         const [content, metadata] = await Promise.all([
@@ -87,20 +80,17 @@ export async function registerRoutes(app: FastifyInstance, core: Core): Promise<
     }
   );
 
-  app.put<{ Params: { path: string }; Body: { content: string } }>(
-    "/api/files/:path",
+  app.put<{ Params: { "*": string }; Body: { content: string } }>(
+    "/api/files/*",
     {
       schema: {
-        params: Type.Object({
-          path: Type.String()
-        }),
         body: Type.Object({
           content: Type.String()
         })
       }
     },
     async (request, reply) => {
-      const filePath = decodePathParam(request.params.path);
+      const filePath = getWildcardPath(request.params);
 
       try {
         await core.fileAccess.write(filePath, request.body.content);

@@ -5,12 +5,13 @@ import {
 } from "@codemirror/state";
 import { markdown } from "@codemirror/lang-markdown";
 import { defaultKeymap } from "@codemirror/commands";
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import {
   EditorView,
-  keymap,
-  lineNumbers
+  keymap
 } from "@codemirror/view";
-import { basicSetup } from "codemirror";
+import { minimalSetup } from "codemirror";
+import { tags } from "@lezer/highlight";
 import {
   useCallback,
   useEffect,
@@ -26,6 +27,68 @@ export interface MarkdownEditorProps {
   onTogglePreview(): void;
   onCursorChange(position: CursorPosition): void;
 }
+
+const editorHighlightStyle = HighlightStyle.define([
+  {
+    tag: tags.heading,
+    textDecoration: "none",
+    color: "var(--ctp-lavender)",
+    fontWeight: "600"
+  },
+  {
+    tag: tags.heading1,
+    fontSize: "1.65em",
+    lineHeight: "1.25"
+  },
+  {
+    tag: tags.heading2,
+    fontSize: "1.45em",
+    lineHeight: "1.3"
+  },
+  {
+    tag: tags.heading3,
+    fontSize: "1.28em",
+    lineHeight: "1.35"
+  },
+  {
+    tag: tags.heading4,
+    fontSize: "1.16em",
+    lineHeight: "1.4"
+  },
+  {
+    tag: [tags.heading5, tags.heading6],
+    fontSize: "1.05em",
+    lineHeight: "1.45"
+  },
+  {
+    tag: tags.emphasis,
+    color: "var(--ctp-mauve)",
+    fontStyle: "italic"
+  },
+  {
+    tag: tags.strong,
+    color: "var(--ctp-text)",
+    fontWeight: "700"
+  },
+  {
+    tag: [tags.monospace, tags.processingInstruction],
+    color: "var(--ctp-mauve)",
+    backgroundColor: "rgba(203, 166, 247, 0.10)"
+  },
+  {
+    tag: [tags.link, tags.url],
+    color: "var(--ctp-blue)",
+    textDecoration: "none"
+  },
+  {
+    tag: [tags.quote, tags.list, tags.contentSeparator],
+    color: "var(--ctp-overlay2)"
+  },
+  {
+    tag: [tags.meta, tags.labelName],
+    color: "var(--ctp-subtext0)"
+  }
+]);
 
 function supportsCodeMirrorLayout() {
   if (typeof document === "undefined" || typeof document.createRange !== "function") {
@@ -77,7 +140,7 @@ export function MarkdownEditor({
     return (
       <textarea
         aria-label="Markdown editor"
-        className="hide-scrollbar h-full w-full resize-none overflow-auto border-0 bg-[color:var(--ctp-base)] px-6 py-5 font-[var(--font-mono)] text-sm leading-7 text-[color:var(--ctp-text)] outline-none"
+        className="hide-scrollbar h-full w-full resize-none overflow-auto border-0 bg-[color:var(--ctp-base)] px-3 py-3 font-[var(--font-mono)] text-sm leading-7 text-[color:var(--ctp-text)] outline-none"
         value={value}
         onChange={(event) => {
           handleChange(event.target.value);
@@ -113,9 +176,9 @@ export function MarkdownEditor({
     }
 
     const editorExtensions: Extension[] = [
-      basicSetup,
-      lineNumbers(),
+      minimalSetup,
       markdown(),
+      syntaxHighlighting(editorHighlightStyle),
       EditorView.lineWrapping,
       keymap.of([
         ...defaultKeymap,
@@ -147,13 +210,8 @@ export function MarkdownEditor({
           lineHeight: "1.7"
         },
         ".cm-content": {
-          padding: "20px 24px",
+          padding: "12px 14px",
           caretColor: "var(--ctp-lavender)"
-        },
-        ".cm-lineNumbers": {
-          color: "var(--ctp-overlay2)",
-          backgroundColor: "var(--ctp-mantle)",
-          borderRight: "1px solid var(--ctp-surface2)"
         },
         ".cm-activeLine": {
           backgroundColor: "rgba(69, 71, 90, 0.35)"

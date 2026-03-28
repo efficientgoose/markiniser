@@ -175,6 +175,18 @@ textarea {
   padding-left: 1.35em;
 }
 
+.markdown-preview ul {
+  list-style: disc;
+}
+
+.markdown-preview ol {
+  list-style: decimal;
+}
+
+.markdown-preview li::marker {
+  color: var(--ctp-overlay2);
+}
+
 .markdown-preview li + li {
   margin-top: 0.35em;
 }
