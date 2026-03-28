@@ -18,7 +18,7 @@ export function useAutosave({
     const state = store.getState();
     const activeFile = state.currentFile;
     const contentToSave = state.dirtyContent;
-    if (!activeFile || contentToSave === null) {
+    if (!activeFile || contentToSave === null || activeFile.isVirtual) {
       return;
     }
 
@@ -54,7 +54,7 @@ export function useAutosave({
   });
 
   useEffect(() => {
-    if (!currentFile || dirtyContent === null) {
+    if (!currentFile || dirtyContent === null || currentFile.isVirtual) {
       return;
     }
 

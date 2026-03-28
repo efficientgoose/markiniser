@@ -153,6 +153,7 @@ describe("App", () => {
       await screen.findByText("Select a file from the sidebar or search to start editing")
     ).toBeInTheDocument();
     expect(await screen.findByText("guide.md")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Load sample file" })).toBeInTheDocument();
   });
 
   it("opens a file and renders raw content in the main panel", async () => {
@@ -355,5 +356,18 @@ describe("App", () => {
     });
 
     expect(await screen.findByText("Saved")).toBeInTheDocument();
+  });
+
+  it("opens an in-memory sample file from the empty state", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Load sample file" }));
+
+    expect(await screen.findByLabelText("Markdown editor")).toBeInTheDocument();
+    expect(await screen.findByText("Markiniser Sample.md")).toBeInTheDocument();
+    expect(await screen.findByText("Sample file · local only")).toBeInTheDocument();
+    expect(await screen.findByText("Command Palette")).toBeInTheDocument();
+    expect(screen.getByText("Edit your markdown files with live preview, autosave, and a local-first workflow.")).toBeInTheDocument();
   });
 });

@@ -3,6 +3,7 @@ import { createContext, useContext, useRef, type ReactNode } from "react";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import { useStore } from "zustand";
 import { fetchFile, fetchFileTree } from "../lib/api";
+import { createSampleFile } from "../lib/sampleFile";
 import type { CurrentFile } from "../types";
 
 export interface CursorPosition {
@@ -30,6 +31,7 @@ export interface AppStoreState {
   setTreeLoading(isLoading: boolean): void;
   loadTree(): Promise<void>;
   openFile(fileOrPath: CurrentFile | string): Promise<void>;
+  openSampleFile(): void;
   applyRootUpdate(rootPath: string, tree: TreeNode[]): void;
   setDirtyContent(content: string | null): void;
   setSaveStatus(status: AppStoreState["saveStatus"]): void;
@@ -85,10 +87,23 @@ export function createAppStore(): AppStore {
     },
     async openFile(fileOrPath) {
       const file = typeof fileOrPath === "string" ? await fetchFile(fileOrPath) : fileOrPath;
-      const recentFiles = [file.path, ...get().recentFiles.filter((path) => path !== file.path)].slice(0, 3);
+      const recentFiles = file.isVirtual
+        ? get().recentFiles
+        : [file.path, ...get().recentFiles.filter((path) => path !== file.path)].slice(0, 3);
       set({
         currentFile: file,
         recentFiles,
+        dirtyContent: null,
+        saveStatus: "saved",
+        externalChangeNotice: null,
+        externalFileSnapshot: null,
+        cursorPosition: null
+      });
+    },
+    openSampleFile() {
+      const file = createSampleFile();
+      set({
+        currentFile: file,
         dirtyContent: null,
         saveStatus: "saved",
         externalChangeNotice: null,

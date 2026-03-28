@@ -68,7 +68,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
     }
 
     store.getState().setDirtyContent(nextContent);
-    store.getState().setSaveStatus("unsaved");
+    store.getState().setSaveStatus(activeFile.isVirtual ? "saved" : "unsaved");
   });
 
   useEffect(() => {
@@ -356,6 +356,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
                 lastModified={currentFile.lastModified}
                 saveStatus={saveStatus}
                 cursorPosition={cursorPosition}
+                isVirtual={currentFile.isVirtual}
               />
             </>
           ) : (
@@ -372,6 +373,15 @@ function AppLayout({ onOpenPalette, onOpenRootPicker }: AppLayoutProps) {
                 <p className="mt-3 text-sm text-[color:var(--ctp-subtext0)]">
                   Cmd/Ctrl+K opens the command palette. Edit, preview and autosave supported.
                 </p>
+                <button
+                  type="button"
+                  className="mt-6 rounded-lg border border-[color:rgba(255,255,255,0.06)] bg-[color:rgba(49,50,68,0.44)] px-4 py-2 text-sm text-[color:var(--ctp-text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition hover:bg-[color:rgba(69,71,90,0.52)]"
+                  onClick={() => {
+                    store.getState().openSampleFile();
+                  }}
+                >
+                  Load sample file
+                </button>
               </div>
             </div>
           )}

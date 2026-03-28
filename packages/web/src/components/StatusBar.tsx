@@ -28,13 +28,15 @@ export interface StatusBarProps {
   lastModified: string;
   saveStatus: "saved" | "saving" | "unsaved" | "error";
   cursorPosition: CursorPosition | null;
+  isVirtual?: boolean;
 }
 
 export function StatusBar({
   size,
   lastModified,
   saveStatus,
-  cursorPosition
+  cursorPosition,
+  isVirtual = false
 }: StatusBarProps) {
   return (
     <footer className="flex items-center justify-between gap-4 border-t border-[color:var(--ctp-surface2)] bg-[color:var(--ctp-crust)] px-4 py-2 text-xs text-[color:var(--ctp-subtext0)]">
@@ -43,7 +45,9 @@ export function StatusBar({
         <span>{formatTimestamp(lastModified)}</span>
       </div>
       <div className="flex items-center gap-4">
-        <span className="text-[color:var(--ctp-text)]">{formatSaveStatus(saveStatus)}</span>
+        <span className="text-[color:var(--ctp-text)]">
+          {isVirtual ? "Sample file · local only" : formatSaveStatus(saveStatus)}
+        </span>
         <span>
           {cursorPosition
             ? `Ln ${cursorPosition.line}, Col ${cursorPosition.column}`

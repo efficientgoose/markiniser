@@ -160,4 +160,24 @@ describe("createAppStore", () => {
     expect(store.getState().dirtyContent).toBeNull();
     expect(store.getState().cursorPosition).toBeNull();
   });
+
+  it("opens a virtual sample file without adding it to recent files", () => {
+    const store = createAppStore();
+
+    store.getState().openFile({
+      path: "/docs/guide.md",
+      name: "guide.md",
+      content: "# Guide",
+      lastModified: "2026-03-28T00:00:00.000Z",
+      size: 7
+    });
+
+    store.getState().openSampleFile();
+
+    expect(store.getState().currentFile?.path).toBe("markiniser://sample/welcome.md");
+    expect(store.getState().currentFile?.name).toBe("Markiniser Sample.md");
+    expect(store.getState().currentFile?.isVirtual).toBe(true);
+    expect(store.getState().recentFiles).toEqual(["/docs/guide.md"]);
+    expect(store.getState().saveStatus).toBe("saved");
+  });
 });

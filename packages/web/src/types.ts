@@ -8,6 +8,7 @@ export interface CurrentFile {
   content: string;
   lastModified: string;
   size: number;
+  isVirtual?: boolean;
 }
 
 export interface FileTreeResponse {
