@@ -20,14 +20,6 @@ markiniser
 
 npm package: https://www.npmjs.com/package/markiniser
 
-GitHub Packages publish target for the repo sidebar:
-
-```bash
-npm run publish:github
-```
-
-This publishes the scoped package `@efficientgoose/markiniser` to GitHub Packages so the repository's `Packages` section is populated, while npm continues to use the unscoped `markiniser` package.
-
 ## What It Does
 
 - Scans one or more local roots for markdown files
