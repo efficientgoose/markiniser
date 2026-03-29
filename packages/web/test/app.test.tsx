@@ -41,6 +41,7 @@ let currentTreeResponse = structuredClone(treeResponse);
 let fetchMock: ReturnType<typeof vi.fn>;
 let prefersDarkScheme = true;
 let localStorageData = new Map<string, string>();
+let sessionStorageData = new Map<string, string>();
 
 function installLocalStorageMock() {
   localStorageData = new Map<string, string>();
@@ -58,6 +59,27 @@ function installLocalStorageMock() {
       },
       clear: () => {
         localStorageData.clear();
+      }
+    }
+  });
+}
+
+function installSessionStorageMock() {
+  sessionStorageData = new Map<string, string>();
+
+  Object.defineProperty(window, "sessionStorage", {
+    writable: true,
+    configurable: true,
+    value: {
+      getItem: (key: string) => sessionStorageData.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        sessionStorageData.set(key, value);
+      },
+      removeItem: (key: string) => {
+        sessionStorageData.delete(key);
+      },
+      clear: () => {
+        sessionStorageData.clear();
       }
     }
   });
@@ -96,6 +118,7 @@ function installMatchMediaMock() {
 beforeEach(() => {
   prefersDarkScheme = true;
   installLocalStorageMock();
+  installSessionStorageMock();
   installMatchMediaMock();
   currentGuideResponse = { ...guideResponse };
   currentTreeResponse = structuredClone(treeResponse);
@@ -285,6 +308,27 @@ describe("App", () => {
     expect(await screen.findByLabelText("Markdown editor")).toBeInTheDocument();
     expect(await screen.findByText("welcome.md")).toBeInTheDocument();
     expect(await screen.findByText("Sample file · local only")).toBeInTheDocument();
+  });
+
+  it("restores the last opened file after remount instead of reopening the sample", async () => {
+    const user = userEvent.setup();
+    const firstRender = render(<App />);
+
+    await user.click(await screen.findByText("guide.md"));
+    await waitFor(() => {
+      expect(window.sessionStorage.getItem("markiniser-last-opened-file")).toBe("/docs/guide.md");
+    });
+    expect(screen.queryByText("Sample file · local only")).not.toBeInTheDocument();
+
+    firstRender.unmount();
+    render(<App />);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/files/%2Fdocs%2Fguide.md");
+    });
+
+    expect((await screen.findAllByText("guide.md")).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Sample file · local only")).not.toBeInTheDocument();
   });
 
   it("opens a file and renders raw content in the main panel", async () => {

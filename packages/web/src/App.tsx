@@ -27,10 +27,12 @@ import {
 import { useFileWatcher } from "./hooks/useFileWatcher";
 import { useAutosave } from "./hooks/useAutosave";
 import type { SectionScrollPosition } from "./lib/scrollSync";
+import { SAMPLE_FILE_PATH } from "./lib/sampleFile";
 
 const SIDEBAR_COLLAPSE_THRESHOLD = 220;
 const MARKDOWN_EXTENSION = ".md";
 const THEME_OVERRIDE_STORAGE_KEY = "markiniser-theme-override";
+const LAST_OPENED_FILE_STORAGE_KEY = "markiniser-last-opened-file";
 type ThemeName = "mocha" | "latte";
 
 function getEditableFilename(name: string | undefined): string {
@@ -104,18 +106,52 @@ function AppLayout({
   });
 
   useEffect(() => {
+    let isCancelled = false;
+
     void (async () => {
       await store.getState().loadTree();
-      if (didOpenDefaultSampleRef.current) {
+      if (didOpenDefaultSampleRef.current || isCancelled) {
         return;
       }
 
       didOpenDefaultSampleRef.current = true;
-      if (!store.getState().currentFile) {
-        store.getState().openSampleFile();
+      if (store.getState().currentFile) {
+        return;
       }
+
+      const lastOpenedFilePath = window.sessionStorage.getItem(
+        LAST_OPENED_FILE_STORAGE_KEY
+      );
+
+      if (lastOpenedFilePath === SAMPLE_FILE_PATH) {
+        store.getState().openSampleFile();
+        return;
+      }
+
+      if (lastOpenedFilePath) {
+        try {
+          await store.getState().openFile(lastOpenedFilePath);
+          return;
+        } catch {
+          window.sessionStorage.removeItem(LAST_OPENED_FILE_STORAGE_KEY);
+        }
+      }
+
+      store.getState().openSampleFile();
     })();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [store]);
+
+  useEffect(() => {
+    if (!currentFile) {
+      return;
+    }
+
+    window.sessionStorage.setItem(LAST_OPENED_FILE_STORAGE_KEY, currentFile.path);
+  }, [currentFile]);
 
   const handleEditorChange = useEffectEvent((nextContent: string) => {
     const activeFile = store.getState().currentFile;
