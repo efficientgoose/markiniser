@@ -19,6 +19,14 @@ Markiniser is a local-first markdown workspace for browsing, searching, editing,
 
 ## Install
 
+Fastest way to run it once published:
+
+```bash
+npx markiniser
+```
+
+For local development in this repo:
+
 ```bash
 npm install
 ```
@@ -46,6 +54,12 @@ Notes:
 - `roots` should be absolute paths or `~/...`
 - only `.md` files inside configured roots are editable
 
+If no config exists yet, Markiniser now creates one automatically at `~/.markiniserrc.json` on first run:
+
+- default root: `~/Desktop`
+- fallback root if Desktop does not exist: the current directory
+- default port: `4000`
+
 ## Build
 
 Build everything once before running:
@@ -62,8 +76,15 @@ Recommended local command:
 node bin/markiniser.js
 ```
 
+Published package command:
+
+```bash
+npx markiniser
+```
+
 What happens:
 
+- on first run, a default config is created automatically if needed
 - the server starts on `127.0.0.1:4000` by default
 - the browser opens automatically unless you pass `--no-open`
 - if `packages/web/dist` exists, the app UI is served at `/`

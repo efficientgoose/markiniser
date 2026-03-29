@@ -1,7 +1,7 @@
-import { writeFile } from "node:fs/promises";
+import { access, writeFile } from "node:fs/promises";
 import { extname } from "node:path";
 import { homedir } from "node:os";
-import { dirname, isAbsolute, resolve } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { cosmiconfig } from "cosmiconfig";
 import type { MarkiniserConfig } from "./types.js";
 
@@ -22,6 +22,31 @@ const SEARCH_PLACES = [".markiniserrc", ".markiniserrc.json", "markiniser.config
 export interface LoadedConfigDetails {
   config: MarkiniserConfig;
   sourcePath: string | null;
+}
+
+export interface EnsureCliConfigPathOptions {
+  cwd?: string;
+  homeDir?: string;
+}
+
+function isConfiguredRootValue(root: string): boolean {
+  return root.trim().length > 0;
+}
+
+function sanitizeRoots(
+  roots: string[] | undefined,
+  fallbackRoots: string[]
+): string[] {
+  if (!roots) {
+    return fallbackRoots;
+  }
+
+  const sanitizedRoots = roots.filter(isConfiguredRootValue);
+  return sanitizedRoots.length > 0 ? sanitizedRoots : fallbackRoots;
+}
+
+function getCliDefaultRoot(homeDirectory: string): string {
+  return join(homeDirectory, "Desktop");
 }
 
 function resolveHomePath(pathValue: string): string {
@@ -53,10 +78,11 @@ export async function loadConfigWithDetails(
     : await explorer.search(cwd);
   const fileConfig = (loadedResult?.config ?? {}) as Partial<MarkiniserConfig>;
   const configBaseDirectory = loadedResult ? dirname(loadedResult.filepath) : cwd;
+  const configuredRoots = sanitizeRoots(fileConfig.roots, DEFAULT_CONFIG.roots);
 
   return {
     config: {
-      roots: (fileConfig.roots ?? DEFAULT_CONFIG.roots).map((root) =>
+      roots: configuredRoots.map((root) =>
         resolveRootPath(root, configBaseDirectory)
       ),
       ignore: fileConfig.ignore ?? DEFAULT_CONFIG.ignore,
@@ -69,6 +95,62 @@ export async function loadConfigWithDetails(
 export async function loadConfig(options: LoadConfigOptions = {}): Promise<MarkiniserConfig> {
   const details = await loadConfigWithDetails(options);
   return details.config;
+}
+
+export async function ensureCliConfigPath(
+  options: EnsureCliConfigPathOptions = {}
+): Promise<string> {
+  const cwd = options.cwd ? resolve(options.cwd) : process.cwd();
+  const homeDirectory = options.homeDir
+    ? resolve(options.homeDir)
+    : process.env.HOME ?? homedir();
+  const explorer = cosmiconfig("markiniser", {
+    searchPlaces: SEARCH_PLACES
+  });
+  const defaultRoot = await (async () => {
+    const desktopDirectory = getCliDefaultRoot(homeDirectory);
+
+    try {
+      await access(desktopDirectory);
+      return desktopDirectory;
+    } catch {
+      return cwd;
+    }
+  })();
+
+  async function repairEmptyRootsIfNeeded(filepath: string): Promise<string> {
+    const loaded = await explorer.load(filepath);
+    const config = (loaded?.config ?? {}) as Partial<MarkiniserConfig>;
+    const sanitizedRoots = sanitizeRoots(config.roots, []);
+
+    if (config.roots && sanitizedRoots.length === 0) {
+      await writeConfig(filepath, {
+        roots: [defaultRoot],
+        ignore: config.ignore ?? DEFAULT_CONFIG.ignore,
+        port: config.port ?? DEFAULT_CONFIG.port
+      });
+    }
+
+    return filepath;
+  }
+
+  const existingProjectConfig = await explorer.search(cwd);
+  if (existingProjectConfig?.filepath) {
+    return repairEmptyRootsIfNeeded(existingProjectConfig.filepath);
+  }
+
+  const existingHomeConfig = await explorer.search(homeDirectory);
+  if (existingHomeConfig?.filepath) {
+    return repairEmptyRootsIfNeeded(existingHomeConfig.filepath);
+  }
+
+  const sourcePath = join(homeDirectory, ".markiniserrc.json");
+  await writeConfig(sourcePath, {
+    ...DEFAULT_CONFIG,
+    roots: [defaultRoot]
+  });
+
+  return sourcePath;
 }
 
 export async function writeConfig(

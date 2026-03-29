@@ -9,6 +9,7 @@ export {
   getBrowserOpenCommand,
   openBrowser
 } from "./browser.js";
+export { formatStartupBox } from "./cliUi.js";
 export { pickDirectory } from "./directoryPicker.js";
 export { createRootConfigController } from "./rootConfig.js";
 import { registerStaticHandling } from "./static.js";

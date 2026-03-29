@@ -8,7 +8,12 @@ import type { FileWatcher } from "./watcher.js";
 import { createFileWatcher } from "./watcher.js";
 import type { FlatFile, MarkiniserConfig, TreeNode } from "./types.js";
 
-export { loadConfig, loadConfigWithDetails, writeConfig } from "./config.js";
+export {
+  ensureCliConfigPath,
+  loadConfig,
+  loadConfigWithDetails,
+  writeConfig
+} from "./config.js";
 export { scanMarkdownFiles } from "./scanner.js";
 export { createSearchIndexer } from "./indexer.js";
 export { createFileAccess } from "./fileAccess.js";
