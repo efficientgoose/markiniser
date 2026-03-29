@@ -7,7 +7,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent
 } from "react";
-import { BookOpen, BriefcaseBusiness, CheckCheck, Columns2, Eye, MousePointerClick, PanelLeft, Pencil, PencilRuler, Search } from "lucide-react";
+import { BookOpen, BriefcaseBusiness, CheckCheck, Columns2, Eye, Moon, MousePointerClick, PanelLeft, Pencil, PencilRuler, Search, Sun } from "lucide-react";
 import logo from "./assets/Markiniser Logo.png";
 import { CommandPalette } from "./components/CommandPalette";
 import { FileTreeSidebar } from "./components/FileTreeSidebar";
@@ -30,6 +30,8 @@ import type { SectionScrollPosition } from "./lib/scrollSync";
 
 const SIDEBAR_COLLAPSE_THRESHOLD = 220;
 const MARKDOWN_EXTENSION = ".md";
+const THEME_OVERRIDE_STORAGE_KEY = "markiniser-theme-override";
+type ThemeName = "mocha" | "latte";
 
 function getEditableFilename(name: string | undefined): string {
   if (!name) {
@@ -56,9 +58,17 @@ interface AppLayoutProps {
   onOpenPalette(): void;
   onOpenRootPicker(): void;
   onShowToast(message: string): void;
+  theme: ThemeName;
+  onToggleTheme(): void;
 }
 
-function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutProps) {
+function AppLayout({
+  onOpenPalette,
+  onOpenRootPicker,
+  onShowToast,
+  theme,
+  onToggleTheme
+}: AppLayoutProps) {
   const store = useAppStoreApi();
   const fileTree = useAppStore((state) => state.fileTree);
   const currentFile = useAppStore((state) => state.currentFile);
@@ -296,9 +306,11 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
     setActiveResizeMode(mode);
   };
   const iconButtonClass =
-    "flex h-7 w-7 items-center justify-center rounded-md border border-[color:rgba(255,255,255,0.06)] bg-[color:rgba(49,50,68,0.5)] text-[color:var(--ctp-subtext1)] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition hover:bg-[color:rgba(69,71,90,0.52)] hover:text-[color:var(--ctp-text)]";
+    "flex h-7 w-7 items-center justify-center rounded-md border border-[color:var(--ui-border)] bg-[color:var(--ui-chrome-surface-strong)] text-[color:var(--ctp-subtext1)] shadow-[var(--ui-chrome-shadow)] transition hover:bg-[color:var(--ui-chrome-hover)] hover:text-[color:var(--ctp-text)]";
   const searchTriggerClass =
-    "flex h-8 w-full min-w-[13rem] max-w-[16.75rem] items-center gap-3 rounded-lg border border-[color:rgba(255,255,255,0.05)] bg-[color:rgba(49,50,68,0.32)] px-4 text-[13px] text-[color:var(--ctp-subtext0)] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:bg-[color:rgba(49,50,68,0.42)] hover:text-[color:var(--ctp-subtext1)]";
+    "flex h-8 w-full min-w-[13rem] max-w-[16.75rem] items-center gap-3 rounded-lg border border-[color:var(--ui-border)] bg-[color:var(--ui-chrome-surface)] px-4 text-[13px] text-[color:var(--ctp-subtext0)] shadow-[var(--ui-chrome-shadow)] transition hover:bg-[color:var(--ui-chrome-hover)] hover:text-[color:var(--ctp-subtext1)]";
+  const themeToggleButtonClass =
+    "flex h-8 min-h-8 w-8 min-w-8 items-center justify-center rounded-lg border border-[color:var(--ui-border)] bg-[color:var(--ui-chrome-surface)] text-[color:var(--ctp-subtext0)] shadow-[var(--ui-chrome-shadow)] transition hover:bg-[color:var(--ui-chrome-hover)] hover:text-[color:var(--ctp-subtext1)]";
   const panelModeButtonClass =
     "flex h-8 w-10 items-center justify-center rounded-lg bg-[color:var(--ctp-surface0)] text-[color:var(--ctp-subtext0)] transition hover:bg-[color:var(--ctp-surface1)] hover:text-[color:var(--ctp-subtext1)]";
   const activePanelModeButtonStyle = {
@@ -389,8 +401,8 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
   };
 
   return (
-    <div data-testid="app-shell" className="theme-mocha font-[var(--font-sans)]">
-      <header className="border-b border-[color:rgba(255,255,255,0.05)] bg-[color:var(--ctp-crust)] px-5 py-2">
+    <div className="font-[var(--font-sans)]">
+      <header className="border-b border-[color:var(--ui-border)] bg-[color:var(--ctp-crust)] px-5 py-2">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2.5">
             <img
@@ -400,7 +412,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
             />
             <div className="leading-tight">
               <div
-                className="text-xl text-[color:var(--ctp-lavender)]"
+                className="text-xl text-[color:var(--ui-brand-text)]"
                 style={{ fontFamily: "var(--font-brand)", fontWeight: 400 }}
               >
                 Markiniser
@@ -453,7 +465,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
                 <span
                   className={
                     canRenameCurrentFile
-                      ? "truncate cursor-pointer rounded-md px-2 py-1 transition hover:bg-[color:rgba(69,71,90,0.42)]"
+                      ? "truncate cursor-pointer rounded-md px-2 py-1 transition hover:bg-[color:var(--ui-chrome-hover)]"
                       : "truncate"
                   }
                   onClick={() => {
@@ -486,12 +498,20 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
             >
               <Search size={16} className="shrink-0 text-[color:var(--ctp-overlay2)]" />
               <span className="flex-1 truncate text-left">Search</span>
-              <span className="flex items-center gap-1 rounded-lg border border-[color:rgba(255,255,255,0.05)] bg-[color:rgba(17,17,27,0.6)] px-2 py-1 text-[11px] text-[color:var(--ctp-subtext0)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]">
+              <span className="flex items-center gap-1 rounded-lg border border-[color:var(--ui-border)] bg-[color:var(--ui-keycap-surface)] px-2 py-1 text-[11px] text-[color:var(--ctp-subtext0)] shadow-[var(--ui-keycap-shadow)]">
                 <span aria-hidden="true" className="text-[12px] leading-none">
                   ⌘
                 </span>
                 <span>K</span>
               </span>
+            </button>
+            <button
+              type="button"
+              aria-label={theme === "mocha" ? "Switch to light mode" : "Switch to dark mode"}
+              className={themeToggleButtonClass}
+              onClick={onToggleTheme}
+            >
+              {theme === "mocha" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
           </div>
         </div>
@@ -503,7 +523,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
         style={panelStyle}
       >
         {isSidebarOpen ? (
-          <aside className="overflow-hidden border-r border-[color:rgba(255,255,255,0.05)] bg-[color:var(--ctp-mantle)] px-4 py-3">
+          <aside className="overflow-hidden border-r border-[color:var(--ui-border)] bg-[color:var(--ctp-mantle)] px-4 py-3">
             <div className="flex h-full flex-col gap-2">
               <div className="flex items-center justify-between text-xs text-[color:var(--ctp-subtext0)]">
                 <div className="flex items-center">
@@ -564,7 +584,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
           <button
             type="button"
             aria-label="Expand sidebar"
-            className="absolute left-0 top-[88px] z-10 flex h-8 w-[24px] items-center justify-center rounded-r-md border border-l-0 border-[color:rgba(255,255,255,0.05)] bg-[color:rgba(49,50,68,0.58)] text-[color:var(--ctp-subtext1)] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition hover:bg-[color:rgba(69,71,90,0.54)] hover:text-[color:var(--ctp-text)]"
+            className="absolute left-0 top-[88px] z-10 flex h-8 w-[24px] items-center justify-center rounded-r-md border border-l-0 border-[color:var(--ui-border)] bg-[color:var(--ui-chrome-surface-strong)] text-[color:var(--ctp-subtext1)] shadow-[var(--ui-chrome-shadow)] transition hover:bg-[color:var(--ui-chrome-hover)] hover:text-[color:var(--ctp-text)]"
             onClick={() => {
               store.getState().setSidebarOpen(true);
             }}
@@ -655,7 +675,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
                 />
               ) : (
                 <div className="flex h-full items-center justify-center px-4 py-6">
-                  <div className="flex w-full max-w-xs flex-col items-center rounded-2xl border border-dashed border-[color:rgba(88,91,112,0.3)] bg-[color:rgba(49,50,68,0.42)] px-6 py-8 text-center text-sm text-[color:var(--ctp-subtext0)]">
+                  <div className="flex w-full max-w-xs flex-col items-center rounded-2xl border border-dashed border-[color:var(--ui-card-border)] bg-[color:var(--ui-card-surface)] px-6 py-8 text-center text-sm text-[color:var(--ctp-subtext0)]">
                     <BookOpen
                       aria-hidden="true"
                       size={44}
@@ -713,7 +733,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
                 </p>
                 <button
                   type="button"
-                  className="mt-6 rounded-lg border border-[color:rgba(255,255,255,0.06)] bg-[color:rgba(49,50,68,0.44)] px-4 py-2 text-sm text-[color:var(--ctp-text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition hover:bg-[color:rgba(69,71,90,0.52)]"
+                  className="mt-6 rounded-lg border border-[color:var(--ui-border)] bg-[color:var(--ui-chrome-surface-strong)] px-4 py-2 text-sm text-[color:var(--ctp-text)] shadow-[var(--ui-chrome-shadow)] transition hover:bg-[color:var(--ui-chrome-hover)]"
                   onClick={() => {
                     store.getState().openSampleFile();
                   }}
@@ -736,7 +756,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
                 startResize(event, "preview");
               }}
             />
-            <aside className="overflow-hidden border-l border-[color:rgba(255,255,255,0.05)] bg-[color:var(--ctp-mantle)]">
+            <aside className="overflow-hidden border-l border-[color:var(--ui-border)] bg-[color:var(--ctp-mantle)]">
               {currentFile ? (
                 <Preview
                   ref={previewRef}
@@ -745,7 +765,7 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
                 />
               ) : (
                 <div className="flex h-full items-center justify-center px-4 py-6">
-                  <div className="flex w-full max-w-xs flex-col items-center rounded-2xl border border-dashed border-[color:rgba(88,91,112,0.3)] bg-[color:rgba(49,50,68,0.42)] px-6 py-8 text-center text-sm text-[color:var(--ctp-subtext0)]">
+                  <div className="flex w-full max-w-xs flex-col items-center rounded-2xl border border-dashed border-[color:var(--ui-card-border)] bg-[color:var(--ui-card-surface)] px-6 py-8 text-center text-sm text-[color:var(--ctp-subtext0)]">
                     <BookOpen
                       aria-hidden="true"
                       size={44}
@@ -764,10 +784,54 @@ function AppLayout({ onOpenPalette, onOpenRootPicker, onShowToast }: AppLayoutPr
 }
 
 export function App() {
+  const [systemPrefersDark, setSystemPrefersDark] = useState(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return true;
+    }
+
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+  const [themeOverride, setThemeOverride] = useState<ThemeName | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const storedTheme = window.localStorage.getItem(THEME_OVERRIDE_STORAGE_KEY);
+    return storedTheme === "mocha" || storedTheme === "latte" ? storedTheme : null;
+  });
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [isRootPickerOpen, setIsRootPickerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isToastVisible, setIsToastVisible] = useState(false);
+  const theme: ThemeName = themeOverride ?? (systemPrefersDark ? "mocha" : "latte");
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQueryList = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (event: MediaQueryListEvent) => {
+      setSystemPrefersDark(event.matches);
+    };
+
+    mediaQueryList.addEventListener("change", handleChange);
+    return () => {
+      mediaQueryList.removeEventListener("change", handleChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.style.colorScheme = theme === "mocha" ? "dark" : "light";
+    }
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    const nextTheme = theme === "mocha" ? "latte" : "mocha";
+    setThemeOverride(nextTheme);
+    window.localStorage.setItem(THEME_OVERRIDE_STORAGE_KEY, nextTheme);
+  }, [theme]);
 
   useEffect(() => {
     if (!toastMessage) {
@@ -790,8 +854,10 @@ export function App() {
   }, [toastMessage]);
 
   return (
+    <div data-testid="app-shell" className={`${theme === "mocha" ? "theme-mocha" : "theme-latte"} font-[var(--font-sans)]`}>
     <AppStoreProvider>
         <AppLayout
+          theme={theme}
           onOpenPalette={() => {
             setIsPaletteOpen(true);
           }}
@@ -801,6 +867,7 @@ export function App() {
           onShowToast={(message) => {
             setToastMessage(message);
           }}
+          onToggleTheme={toggleTheme}
         />
       <CommandPalette
         open={isPaletteOpen}
@@ -817,13 +884,13 @@ export function App() {
       {toastMessage ? (
         <div className="pointer-events-none fixed bottom-6 left-1/2 z-[60] -translate-x-1/2">
           <div
-            className={`flex items-center gap-3 rounded-xl bg-[color:rgba(24,24,37,0.94)] px-4 py-3 text-sm text-[color:var(--ctp-text)] shadow-[0_20px_50px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.03)] ring-1 ring-[color:rgba(255,255,255,0.04)] backdrop-blur-xl transition-all duration-250 ${
+            className={`flex items-center gap-3 rounded-xl bg-[color:var(--ui-toast-surface)] px-4 py-3 text-sm text-[color:var(--ctp-text)] shadow-[var(--ui-toast-shadow)] ring-1 ring-[color:var(--ui-toast-ring)] backdrop-blur-xl transition-all duration-250 ${
               isToastVisible
                 ? "translate-y-0 opacity-100"
                 : "translate-y-2 opacity-0"
             }`}
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[color:rgba(166,227,161,0.14)] text-[color:var(--ctp-green)]">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--ui-success-surface)] text-[color:var(--ctp-green)]">
               <CheckCheck size={15} strokeWidth={2.25} />
             </span>
             <span>{toastMessage}</span>
@@ -831,5 +898,6 @@ export function App() {
         </div>
       ) : null}
     </AppStoreProvider>
+    </div>
   );
 }

@@ -39,8 +39,64 @@ const rootConfigResponse = {
 let currentGuideResponse = { ...guideResponse };
 let currentTreeResponse = structuredClone(treeResponse);
 let fetchMock: ReturnType<typeof vi.fn>;
+let prefersDarkScheme = true;
+let localStorageData = new Map<string, string>();
+
+function installLocalStorageMock() {
+  localStorageData = new Map<string, string>();
+
+  Object.defineProperty(window, "localStorage", {
+    writable: true,
+    configurable: true,
+    value: {
+      getItem: (key: string) => localStorageData.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        localStorageData.set(key, value);
+      },
+      removeItem: (key: string) => {
+        localStorageData.delete(key);
+      },
+      clear: () => {
+        localStorageData.clear();
+      }
+    }
+  });
+}
+
+function installMatchMediaMock() {
+  const listeners = new Set<(event: MediaQueryListEvent) => void>();
+
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: query === "(prefers-color-scheme: dark)" ? prefersDarkScheme : false,
+      media: query,
+      onchange: null,
+      addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => {
+        listeners.add(listener);
+      },
+      removeEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => {
+        listeners.delete(listener);
+      },
+      addListener: (listener: (event: MediaQueryListEvent) => void) => {
+        listeners.add(listener);
+      },
+      removeListener: (listener: (event: MediaQueryListEvent) => void) => {
+        listeners.delete(listener);
+      },
+      dispatchEvent: (event: Event) => {
+        listeners.forEach((listener) => listener(event as MediaQueryListEvent));
+        return true;
+      }
+    }))
+  });
+}
 
 beforeEach(() => {
+  prefersDarkScheme = true;
+  installLocalStorageMock();
+  installMatchMediaMock();
   currentGuideResponse = { ...guideResponse };
   currentTreeResponse = structuredClone(treeResponse);
   fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -193,6 +249,33 @@ afterEach(() => {
 });
 
 describe("App", () => {
+  it("uses light theme when system preference is light", async () => {
+    prefersDarkScheme = false;
+    installMatchMediaMock();
+
+    render(<App />);
+
+    expect(await screen.findByTestId("app-shell")).toHaveClass("theme-latte");
+    expect(screen.queryByTestId("app-shell")).not.toHaveClass("theme-mocha");
+  });
+
+  it("lets the user toggle theme and persists the override", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(await screen.findByTestId("app-shell")).toHaveClass("theme-mocha");
+
+    await user.click(screen.getByRole("button", { name: "Switch to light mode" }));
+
+    expect(screen.getByTestId("app-shell")).toHaveClass("theme-latte");
+    expect(localStorage.getItem("markiniser-theme-override")).toBe("latte");
+
+    await user.click(screen.getByRole("button", { name: "Switch to dark mode" }));
+
+    expect(screen.getByTestId("app-shell")).toHaveClass("theme-mocha");
+    expect(localStorage.getItem("markiniser-theme-override")).toBe("mocha");
+  });
+
   it("loads the tree and opens the sample file by default", async () => {
     render(<App />);
 

@@ -11,7 +11,7 @@ interface FileTreeProps {
 }
 
 const INDENT_SIZE = 14;
-const GUIDE_COLOR = "rgba(88, 91, 112, 0.42)";
+const GUIDE_COLOR = "rgba(88, 91, 112, 0.24)";
 
 function sortElements(elements: TreeViewElement[]) {
   return [...elements].sort((a, b) => {
@@ -123,8 +123,8 @@ function TreeBranch({
                 }
                 className={
                   isFolder
-                    ? `shrink-0 text-[color:var(--ctp-mauve)] ${
-                        isExpanded ? "" : "fill-[color:var(--ctp-mauve)]"
+                    ? `shrink-0 text-[color:var(--ui-folder-accent)] ${
+                        isExpanded ? "" : "fill-[color:var(--ui-folder-accent)]"
                       }`
                     : "shrink-0 text-[color:var(--ctp-subtext0)]"
                 }

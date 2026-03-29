@@ -3,6 +3,13 @@
 @tailwind utilities;
 
 :root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Fira Code", ui-monospace, SFMono-Regular, monospace;
+  --font-brand: "Literata", Georgia, serif;
+  font-family: var(--font-sans);
+}
+
+.theme-mocha {
   color-scheme: dark;
   --ctp-base: #1e1e2e;
   --ctp-mantle: #181825;
@@ -22,19 +29,78 @@
   --ctp-peach: #fab387;
   --ctp-blue: #89b4fa;
   --ctp-yellow: #f9e2af;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Fira Code", ui-monospace, SFMono-Regular, monospace;
-  --font-brand: "Literata", Georgia, serif;
-  font-family: var(--font-sans);
-  background: var(--ctp-base);
+  --ui-border: rgba(255, 255, 255, 0.05);
+  --ui-chrome-surface: rgba(49, 50, 68, 0.32);
+  --ui-chrome-surface-strong: rgba(49, 50, 68, 0.5);
+  --ui-chrome-hover: rgba(69, 71, 90, 0.52);
+  --ui-chrome-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  --ui-keycap-surface: rgba(17, 17, 27, 0.6);
+  --ui-keycap-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  --ui-card-surface: rgba(49, 50, 68, 0.42);
+  --ui-card-border: rgba(88, 91, 112, 0.3);
+  --ui-toast-surface: rgba(24, 24, 37, 0.94);
+  --ui-toast-ring: rgba(255, 255, 255, 0.04);
+  --ui-toast-shadow: 0 20px 50px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --ui-success-surface: rgba(166, 227, 161, 0.14);
+  --ui-folder-accent: #cba6f7;
+  --ui-brand-text: #b4befe;
+  --ui-inline-code-surface: rgba(49, 50, 68, 0.72);
+  --ui-inline-code-border: rgba(88, 91, 112, 0.2);
+  --ui-code-block-surface: rgba(24, 24, 37, 0.92);
+  --ui-code-block-border: rgba(88, 91, 112, 0.18);
+  --ui-table-surface: rgba(24, 24, 37, 0.55);
+  --ui-table-header-surface: rgba(49, 50, 68, 0.6);
+}
+
+.theme-latte {
+  color-scheme: light;
+  --ctp-base: #eff1f5;
+  --ctp-mantle: #e6e9ef;
+  --ctp-crust: #dce0e8;
+  --ctp-surface0: #ccd0da;
+  --ctp-surface1: #bcc0cc;
+  --ctp-surface2: #acb0be;
+  --ctp-text: #4c4f69;
+  --ctp-subtext1: #5c5f77;
+  --ctp-subtext0: #6c6f85;
+  --ctp-overlay2: #7c7f93;
+  --ctp-lavender: #7287fd;
+  --ctp-mauve: #8839ef;
+  --ctp-teal: #179299;
+  --ctp-green: #40a02b;
+  --ctp-red: #d20f39;
+  --ctp-peach: #fe640b;
+  --ctp-blue: #1e66f5;
+  --ctp-yellow: #df8e1d;
+  --ui-border: rgba(76, 79, 105, 0.12);
+  --ui-chrome-surface: rgba(204, 208, 218, 0.42);
+  --ui-chrome-surface-strong: rgba(204, 208, 218, 0.7);
+  --ui-chrome-hover: rgba(188, 192, 204, 0.74);
+  --ui-chrome-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  --ui-keycap-surface: rgba(220, 224, 232, 0.9);
+  --ui-keycap-shadow: inset 0 0 0 1px rgba(76, 79, 105, 0.08);
+  --ui-card-surface: rgba(204, 208, 218, 0.34);
+  --ui-card-border: rgba(172, 176, 190, 0.55);
+  --ui-toast-surface: rgba(239, 241, 245, 0.96);
+  --ui-toast-ring: rgba(76, 79, 105, 0.08);
+  --ui-toast-shadow: 0 20px 50px rgba(76, 79, 105, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --ui-success-surface: rgba(64, 160, 43, 0.12);
+  --ui-folder-accent: #b38ef3;
+  --ui-brand-text: #6d5bd0;
+  --ui-inline-code-surface: rgba(204, 208, 218, 0.72);
+  --ui-inline-code-border: rgba(172, 176, 190, 0.55);
+  --ui-code-block-surface: rgba(230, 233, 239, 0.96);
+  --ui-code-block-border: rgba(172, 176, 190, 0.55);
+  --ui-table-surface: rgba(230, 233, 239, 0.72);
+  --ui-table-header-surface: rgba(204, 208, 218, 0.82);
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: var(--ctp-base);
-  color: var(--ctp-text);
+  background: var(--ctp-base, #1e1e2e);
+  color: var(--ctp-text, #cdd6f4);
 }
 
 * {
@@ -277,9 +343,9 @@ textarea {
 }
 
 .markdown-preview code {
-  border: 1px solid rgba(88, 91, 112, 0.2);
+  border: 1px solid var(--ui-inline-code-border);
   border-radius: 7px;
-  background: rgba(49, 50, 68, 0.72);
+  background: var(--ui-inline-code-surface);
   padding: 0.13em 0.42em;
   font-family: var(--font-mono);
   font-size: 0.9em;
@@ -288,9 +354,9 @@ textarea {
 
 .markdown-preview pre {
   overflow: auto;
-  border: 1px solid rgba(88, 91, 112, 0.18);
+  border: 1px solid var(--ui-code-block-border);
   border-radius: 16px;
-  background: rgba(24, 24, 37, 0.92);
+  background: var(--ui-code-block-surface);
   padding: 1.15em 1.2em;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
@@ -298,6 +364,7 @@ textarea {
 .markdown-preview pre code {
   border: 0;
   background: transparent;
+  white-space: pre;
   padding: 0;
   color: var(--ctp-text);
 }
@@ -325,7 +392,7 @@ textarea {
   border-collapse: collapse;
   overflow: hidden;
   border-radius: 12px;
-  background: rgba(24, 24, 37, 0.55);
+  background: var(--ui-table-surface);
 }
 
 .markdown-preview th,
@@ -336,6 +403,6 @@ textarea {
 }
 
 .markdown-preview th {
-  background: rgba(49, 50, 68, 0.6);
+  background: var(--ui-table-header-surface);
   color: var(--ctp-text);
 }
