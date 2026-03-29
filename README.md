@@ -20,6 +20,14 @@ markiniser
 
 npm package: https://www.npmjs.com/package/markiniser
 
+GitHub Packages publish target for the repo sidebar:
+
+```bash
+npm run publish:github
+```
+
+This publishes the scoped package `@efficientgoose/markiniser` to GitHub Packages so the repository's `Packages` section is populated, while npm continues to use the unscoped `markiniser` package.
+
 ## What It Does
 
 - Scans one or more local roots for markdown files
@@ -162,16 +170,13 @@ http://127.0.0.1:4000/
 
 This updates the config file and rebuilds the tree.
 
-## Keyboard Shortcuts
+### Contributing
+Contributions are welcome! Here's how to get started:
 
-- `Cmd/Ctrl+K`: open command palette
-- `Cmd/Ctrl+S`: save file immediately
-- `Cmd/Ctrl+Shift+P`: toggle preview panel
+ - Fork the repository
+ - Create a feature branch (git checkout -b feature/my-feature)
+ - Commit your changes and open a pull request
 
-## Development Checks
+Please open an issue first for major changes so we can discuss the approach.
 
-```bash
-npm run test
-npm run build
-npm run typecheck
-```
+

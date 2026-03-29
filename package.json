@@ -1,8 +1,16 @@
 {
   "name": "markiniser",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Local-first markdown organizer for browsing, searching, and editing markdown files on localhost.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/efficientgoose/markiniser.git"
+  },
+  "homepage": "https://github.com/efficientgoose/markiniser#readme",
+  "bugs": {
+    "url": "https://github.com/efficientgoose/markiniser/issues"
+  },
   "bin": {
     "markiniser": "./bin/markiniser.js"
   },
@@ -19,6 +27,9 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces",
+    "package:github": "npm run build && node scripts/github-package.mjs",
+    "publish:github": "npm run package:github && npm publish ./.pkg/github --registry=https://npm.pkg.github.com",
+    "pack:github": "npm run package:github && npm pack --dry-run ./.pkg/github",
     "prepack": "npm run build",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"

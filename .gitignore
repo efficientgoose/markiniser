@@ -1,5 +1,6 @@
 /tmp
 /out-tsc
+/.pkg
 
 /node_modules
 /docs
@@ -10,6 +11,7 @@ yarn-debug.log*
 yarn-error.log*
 /.pnp
 .pnp.js
+.npmrc/
 
 .idea/
 .vscode/*
