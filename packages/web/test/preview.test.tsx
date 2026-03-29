@@ -56,6 +56,15 @@ describe("createApp", () => {
     expect(combinedHtml).not.toContain("<p>expect(");
   });
 
+  it("renders superscript, subscript, and highlighted syntax in preview", () => {
+    const sections = renderPreviewSections("H~2~O and 29^th^ with ==Highlighted text==");
+    const combinedHtml = sections.map((section) => section.html).join("");
+
+    expect(combinedHtml).toContain("H<sub>2</sub>O");
+    expect(combinedHtml).toContain("29<sup>th</sup>");
+    expect(combinedHtml).toContain("<mark>Highlighted text</mark>");
+  });
+
   it("splits sample-file bullet lists into smaller preview sections for sync", () => {
     const sections = renderPreviewSections(SAMPLE_FILE_CONTENT);
 
