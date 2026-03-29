@@ -10,13 +10,8 @@ export {
   openBrowser
 } from "./browser.js";
 export { pickDirectory } from "./directoryPicker.js";
-export {
-  createWatcherSupervisor,
-  startWatcherInBackground
-} from "./runtime.js";
 export { createRootConfigController } from "./rootConfig.js";
 import { registerStaticHandling } from "./static.js";
-import { registerWebSocket } from "./ws.js";
 import type { RootConfigController } from "./rootConfig.js";
 
 export interface CreateServerOptions {
@@ -52,7 +47,6 @@ export async function createServer(
     }
   });
 
-  await registerWebSocket(app, options.core);
   await registerRoutes(app, options.core);
   if (options.rootConfigController) {
     await registerRootConfigRoutes(app, options.rootConfigController);

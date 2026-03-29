@@ -8,15 +8,14 @@ program
   .name("markiniser")
   .option("-p, --port <port>", "Override the configured port", (value) => Number.parseInt(value, 10))
   .option("-c, --config <path>", "Path to a config file")
-  .option("--no-open", "Do not open the app in a browser automatically")
-  .option("--no-watch", "Disable live file watching");
+  .option("--no-open", "Do not open the app in a browser automatically");
 
 program.parse(process.argv);
 
 const options = program.opts();
 
 async function main() {
-  const [{ createCore, loadConfigWithDetails }, { createRootConfigController, createServer, createWatcherSupervisor, openBrowser, pickDirectory, startWatcherInBackground }, path] = await Promise.all([
+  const [{ createCore, loadConfigWithDetails }, { createRootConfigController, createServer, openBrowser, pickDirectory }, path] = await Promise.all([
     import("@markiniser/core"),
     import("@markiniser/server"),
     import("node:path")
@@ -29,12 +28,6 @@ async function main() {
   const config = loadedConfig.config;
   const core = await createCore(config);
   const initialScan = await core.scanner.scan();
-  const watcherSupervisor = createWatcherSupervisor({
-    watcher: core.watcher,
-    onWarning(message) {
-      console.warn(message);
-    }
-  });
 
   const server = await createServer({
     core,
@@ -55,7 +48,7 @@ async function main() {
   });
 
   const shutdown = async (signal) => {
-    await Promise.allSettled([server.close(), watcherSupervisor.stop()]);
+    await Promise.allSettled([server.close()]);
     console.log(`\nShutting down Markiniser (${signal})`);
     process.exit(0);
   };
@@ -83,14 +76,6 @@ async function main() {
         console.warn(message);
       }
     });
-  }
-
-  if (options.watch) {
-    startWatcherInBackground(watcherSupervisor, (message) => {
-      console.warn(message);
-    });
-  } else {
-    console.warn("[warn] File watching disabled via --no-watch");
   }
 }
 

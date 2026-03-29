@@ -21,7 +21,6 @@ export interface AppStoreState {
   saveStatus: "saved" | "saving" | "unsaved" | "error";
   isPreviewOpen: boolean;
   isSidebarOpen: boolean;
-  watcherStatus: "connecting" | "connected" | "disconnected";
   externalChangeNotice: string | null;
   externalFileSnapshot: CurrentFile | null;
   cursorPosition: CursorPosition | null;
@@ -38,7 +37,6 @@ export interface AppStoreState {
   setSaveStatus(status: AppStoreState["saveStatus"]): void;
   setPreviewOpen(isOpen: boolean): void;
   setSidebarOpen(isOpen: boolean): void;
-  setWatcherStatus(status: AppStoreState["watcherStatus"]): void;
   setExternalChangeNotice(message: string | null): void;
   setExternalFileSnapshot(file: CurrentFile | null): void;
   setCursorPosition(position: CursorPosition | null): void;
@@ -60,7 +58,6 @@ export function createAppStore(): AppStore {
     saveStatus: "saved",
     isPreviewOpen: true,
     isSidebarOpen: true,
-    watcherStatus: "connecting",
     externalChangeNotice: null,
     externalFileSnapshot: null,
     cursorPosition: null,
@@ -164,9 +161,6 @@ export function createAppStore(): AppStore {
     },
     setSidebarOpen(isOpen) {
       set({ isSidebarOpen: isOpen });
-    },
-    setWatcherStatus(status) {
-      set({ watcherStatus: status });
     },
     setExternalChangeNotice(message) {
       set({ externalChangeNotice: message });

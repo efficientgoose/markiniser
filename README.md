@@ -45,7 +45,6 @@ Notes:
 
 - `roots` should be absolute paths or `~/...`
 - only `.md` files inside configured roots are editable
-- if you use a very large root, file watching may hit OS limits
 
 ## Build
 
@@ -60,7 +59,7 @@ npm run build
 Recommended local command:
 
 ```bash
-node bin/markiniser.js --no-watch
+node bin/markiniser.js
 ```
 
 What happens:
@@ -75,7 +74,6 @@ Useful flags:
 ```bash
 node bin/markiniser.js --port 4001
 node bin/markiniser.js --config /absolute/path/to/config.json
-node bin/markiniser.js --no-watch
 node bin/markiniser.js --no-open
 ```
 
@@ -130,16 +128,6 @@ This updates the config file and rebuilds the tree.
 - `Cmd/Ctrl+K`: open command palette
 - `Cmd/Ctrl+S`: save file immediately
 - `Cmd/Ctrl+Shift+P`: toggle preview panel
-
-## Notes About Watching
-
-If live watching causes issues on your machine, keep using:
-
-```bash
-node bin/markiniser.js --no-watch
-```
-
-That disables external file watching but keeps browsing, editing, searching, previewing, renaming, and root switching working normally.
 
 ## Development Checks
 

@@ -24,7 +24,6 @@ import {
   useAppStore,
   useAppStoreApi
 } from "./store/useAppStore";
-import { useFileWatcher } from "./hooks/useFileWatcher";
 import { useAutosave } from "./hooks/useAutosave";
 import type { SectionScrollPosition } from "./lib/scrollSync";
 import { SAMPLE_FILE_PATH } from "./lib/sampleFile";
@@ -98,7 +97,6 @@ function AppLayout({
   const isEditorOnly = !isPreviewOpen && !isPreviewMaximized;
   const isPreviewOnly = isPreviewMaximized;
 
-  useFileWatcher();
   const { saveNow } = useAutosave({
     store,
     currentFile,

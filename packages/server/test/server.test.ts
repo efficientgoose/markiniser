@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { createCore } from "@markiniser/core";
 import { createServer } from "../src/index.js";
-import { bindWatcherBroadcasts } from "../src/ws.js";
 
 const tempDirs: string[] = [];
 
@@ -399,40 +398,5 @@ describe("createServer", () => {
     expect(response.body).toContain("frontend");
 
     await server.close();
-  });
-
-  it("broadcasts watcher events to connected sockets", async () => {
-    const root = await makeTempDir("markiniser-server-ws-");
-    const core = await createCore({
-      roots: [root],
-      ignore: [".git"],
-      port: 4128
-    });
-    const sentMessages: string[] = [];
-    const fakeSocket = {
-      OPEN: 1,
-      readyState: 1,
-      send(message: string) {
-        sentMessages.push(message);
-      }
-    };
-
-    const cleanup = bindWatcherBroadcasts(core, new Set([fakeSocket]));
-    const eventPayload = {
-      path: join(root, "docs", "guide.md"),
-      tree: core.getTree()
-    };
-
-    core.watcher.emit("file-changed", eventPayload);
-
-    const [message] = sentMessages.map((payload) => JSON.parse(payload));
-
-    expect(message).toMatchObject({
-      event: "file-changed",
-      path: eventPayload.path
-    });
-    expect(Array.isArray(message.tree)).toBe(true);
-
-    cleanup();
   });
 });

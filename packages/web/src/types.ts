@@ -45,9 +45,3 @@ export interface RenameFileResponse {
   lastModified: string;
   tree: TreeNode[];
 }
-
-export interface WatcherMessage {
-  event: "file-added" | "file-changed" | "file-removed";
-  path: string;
-  tree: TreeNode[];
-}
