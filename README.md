@@ -1,6 +1,25 @@
 # Markiniser
 
+[![npm version](https://img.shields.io/npm/v/markiniser)](https://www.npmjs.com/package/markiniser)
+[![npm downloads](https://img.shields.io/npm/dm/markiniser)](https://www.npmjs.com/package/markiniser)
+[![license](https://img.shields.io/npm/l/markiniser)](https://www.npmjs.com/package/markiniser)
+
 Markiniser is a local-first markdown workspace for browsing, searching, editing, and previewing `.md` files on localhost. It runs entirely on your machine and only works against the root folders you configure.
+
+Run it instantly:
+
+```bash
+npx markiniser
+```
+
+Install globally if you prefer:
+
+```bash
+npm install -g markiniser
+markiniser
+```
+
+npm package: https://www.npmjs.com/package/markiniser
 
 ## What It Does
 
